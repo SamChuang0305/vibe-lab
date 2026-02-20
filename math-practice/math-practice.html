@@ -58,7 +58,7 @@
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="mulDivRange20" type="checkbox" value="20" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>20x20（11x11 ~ 20x20）</span>
+              <span>20x20（11x2 ~ 20x20）</span>
             </label>
           </div>
         </fieldset>
@@ -243,16 +243,16 @@
 
     function getMulDivRange(rangeType) {
       if (rangeType === '20') {
-        return { min: 11, max: 20 };
+        return { leftMin: 11, leftMax: 20, rightMin: 2, rightMax: 20 };
       }
-      return { min: 2, max: 9 };
+      return { leftMin: 2, leftMax: 9, rightMin: 2, rightMax: 9 };
     }
 
     function generateQuestion(digitLength, operationTypes, mulDivRanges) {
       const addSubMin = 1;
       const addSubMax = getAddSubMaxValue(digitLength);
       const selectedMulDivRange = mulDivRanges[randomInt(0, mulDivRanges.length - 1)];
-      const { min: mulDivMin, max: mulDivMax } = getMulDivRange(selectedMulDivRange);
+      const { leftMin: mulLeftMin, leftMax: mulLeftMax, rightMin: mulRightMin, rightMax: mulRightMax } = getMulDivRange(selectedMulDivRange);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
 
@@ -280,12 +280,12 @@
         }
         correct = a - b;
       } else if (operationType === 'mul') {
-        a = randomInt(mulDivMin, mulDivMax);
-        b = randomInt(mulDivMin, mulDivMax);
+        a = randomInt(mulLeftMin, mulLeftMax);
+        b = randomInt(mulRightMin, mulRightMax);
         correct = a * b;
       } else {
-        b = randomInt(mulDivMin, mulDivMax);
-        const quotient = randomInt(mulDivMin, mulDivMax);
+        b = randomInt(mulRightMin, mulRightMax);
+        const quotient = randomInt(mulLeftMin, mulLeftMax);
         a = b * quotient;
         correct = quotient;
       }
@@ -484,7 +484,7 @@
       const selectedOperations = config.operationTypes.map((type) => getOperationMeta(type).label).join('、');
       const addSubRangeLabel = config.digitLength === 1 ? '1~9' : config.digitLength === 2 ? '1~99' : '1~999';
       const mulDivRangeLabel = config.mulDivRanges
-        .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x11 ~ 20x20）'))
+        .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x2 ~ 20x20）'))
         .join('、');
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
       configSummaryList.innerHTML = '';
