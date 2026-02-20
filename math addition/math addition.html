@@ -57,6 +57,7 @@
         <input id="answerInput" type="number" inputmode="numeric" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
         <button id="submitBtn" class="w-full rounded bg-green-600 px-5 py-3 text-base font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 sm:w-auto">送出</button>
         <button id="clearBtn" class="w-full rounded bg-slate-500 px-5 py-3 text-base font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">清空</button>
+        <button id="leaveBtn" class="w-full rounded bg-rose-600 px-5 py-3 text-base font-semibold text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto">離開</button>
       </div>
       <p id="quizError" class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700"></p>
     </section>
@@ -72,6 +73,7 @@
               <th class="border border-slate-300 px-3 py-2">題目</th>
               <th class="border border-slate-300 px-3 py-2">你的答案</th>
               <th class="border border-slate-300 px-3 py-2">正確答案</th>
+              <th class="border border-slate-300 px-3 py-2">作答結果</th>
             </tr>
           </thead>
           <tbody id="resultBody"></tbody>
@@ -101,6 +103,7 @@
     const answerInput = document.getElementById('answerInput');
     const submitBtn = document.getElementById('submitBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const leaveBtn = document.getElementById('leaveBtn');
     const quizError = document.getElementById('quizError');
 
     const scoreText = document.getElementById('scoreText');
@@ -312,9 +315,25 @@
         correctTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
         correctTd.textContent = String(q.correct);
 
+        const resultTd = document.createElement('td');
+        resultTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        if (q.timeout) {
+          resultTd.textContent = '超時';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else if (q.userAnswer === null || Number.isNaN(q.userAnswer)) {
+          resultTd.textContent = '未作答';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else if (!isCorrect) {
+          resultTd.textContent = '錯誤';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else {
+          resultTd.textContent = '';
+        }
+
         tr.appendChild(problemTd);
         tr.appendChild(userTd);
         tr.appendChild(correctTd);
+        tr.appendChild(resultTd);
         resultBody.appendChild(tr);
       });
 
@@ -328,6 +347,14 @@
       clearQuizError();
       setInvalid(answerInput, false);
       answerInput.focus();
+    });
+    leaveBtn.addEventListener('click', () => {
+      const confirmed = window.confirm('確認要離開？將會直接顯示作答結果');
+      if (!confirmed) {
+        return;
+      }
+      clearInterval(timerId);
+      finishQuiz();
     });
     restartBtn.addEventListener('click', () => {
       clearInterval(timerId);
