@@ -224,6 +224,19 @@
       if (operationType === 'add') {
         correct = a + b;
       } else if (operationType === 'sub') {
+        let found = false;
+        for (let i = 0; i < 500; i += 1) {
+          a = randomInt(min, max);
+          b = randomInt(min, max);
+          if (a !== b) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          a = min + 1;
+          b = min;
+        }
         if (a < b) {
           [a, b] = [b, a];
         }
