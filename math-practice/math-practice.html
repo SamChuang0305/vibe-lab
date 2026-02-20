@@ -41,11 +41,19 @@
         </label>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">數字長度</span>
+          <span class="text-sm font-medium">加減數字上限</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
-            <option value="1">個位數</option>
-            <option value="2">十位數</option>
-            <option value="3">百位數</option>
+            <option value="1">個位數（1~9）</option>
+            <option value="2">十位數（1~99）</option>
+            <option value="3">百位數（1~999）</option>
+          </select>
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">乘除出題範圍</span>
+          <select id="mulDivRange" class="rounded border border-slate-300 px-3 py-2">
+            <option value="9" selected>9x9（2x2 ~ 9x9）</option>
+            <option value="20">20x20（11x11 ~ 20x20）</option>
           </select>
         </label>
 
@@ -87,6 +95,10 @@
     <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <h2 class="mb-4 text-lg font-semibold">作答結果</h2>
       <p id="scoreText" class="mb-4 text-base font-medium"></p>
+      <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+        <p class="mb-2 text-sm font-semibold text-slate-700">本次設定</p>
+        <ul id="configSummaryList" class="list-disc space-y-1 pl-5 text-sm text-slate-700"></ul>
+      </div>
       <p id="earlyExitText" class="mb-4 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">提早結束</p>
 
       <div class="overflow-x-auto">
@@ -99,6 +111,7 @@
               <th class="border border-slate-300 px-3 py-2">你的答案</th>
               <th class="border border-slate-300 px-3 py-2">正確答案</th>
               <th class="border border-slate-300 px-3 py-2">作答結果</th>
+              <th class="border border-slate-300 px-3 py-2">作答時間</th>
             </tr>
           </thead>
           <tbody id="resultBody"></tbody>
@@ -118,6 +131,7 @@
     const digitLengthSelect = document.getElementById('digitLength');
     const timeModeSelect = document.getElementById('timeMode');
     const timeLimitInput = document.getElementById('timeLimit');
+    const mulDivRangeSelect = document.getElementById('mulDivRange');
     const secondsWrap = document.getElementById('secondsWrap');
     const setupError = document.getElementById('setupError');
     const opAddInput = document.getElementById('opAdd');
@@ -136,6 +150,7 @@
     const quizError = document.getElementById('quizError');
 
     const scoreText = document.getElementById('scoreText');
+    const configSummaryList = document.getElementById('configSummaryList');
     const earlyExitText = document.getElementById('earlyExitText');
     const resultBody = document.getElementById('resultBody');
     const restartBtn = document.getElementById('restartBtn');
@@ -144,11 +159,13 @@
     let currentIndex = 0;
     let timerId = null;
     let remainingSeconds = 0;
+    let currentQuestionStartedAt = null;
     let endedEarly = false;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
       digitLength: 1,
+      mulDivRange: '9',
       timeMode: 'limited',
       timeLimit: 10
     };
@@ -211,56 +228,58 @@
       return { symbol: '➗', label: '除法計算 ➗' };
     }
 
-    function generateQuestion(digitLength, operationTypes) {
-      const min = Math.pow(10, digitLength - 1);
-      const max = Math.pow(10, digitLength) - 1;
-      const minForMulDiv = Math.max(min, 2);
+    function getAddSubMaxValue(digitLength) {
+      if (digitLength === 1) return 9;
+      if (digitLength === 2) return 99;
+      return 999;
+    }
+
+    function getMulDivRange(rangeType) {
+      if (rangeType === '20') {
+        return { min: 11, max: 20 };
+      }
+      return { min: 2, max: 9 };
+    }
+
+    function generateQuestion(digitLength, operationTypes, mulDivRange) {
+      const addSubMin = 1;
+      const addSubMax = getAddSubMaxValue(digitLength);
+      const { min: mulDivMin, max: mulDivMax } = getMulDivRange(mulDivRange);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
 
-      let a = randomInt(min, max);
-      let b = randomInt(min, max);
+      let a = randomInt(addSubMin, addSubMax);
+      let b = randomInt(addSubMin, addSubMax);
       let correct = 0;
       if (operationType === 'add') {
         correct = a + b;
       } else if (operationType === 'sub') {
         let found = false;
         for (let i = 0; i < 500; i += 1) {
-          a = randomInt(min, max);
-          b = randomInt(min, max);
+          a = randomInt(addSubMin, addSubMax);
+          b = randomInt(addSubMin, addSubMax);
           if (a !== b) {
             found = true;
             break;
           }
         }
         if (!found) {
-          a = min + 1;
-          b = min;
+          a = addSubMin + 1;
+          b = addSubMin;
         }
         if (a < b) {
           [a, b] = [b, a];
         }
         correct = a - b;
       } else if (operationType === 'mul') {
-        a = randomInt(minForMulDiv, max);
-        b = randomInt(minForMulDiv, max);
+        a = randomInt(mulDivMin, mulDivMax);
+        b = randomInt(mulDivMin, mulDivMax);
         correct = a * b;
       } else {
-        let found = false;
-        for (let i = 0; i < 500; i += 1) {
-          a = randomInt(minForMulDiv, max);
-          b = randomInt(minForMulDiv, max);
-          if (a !== b && a % b === 0) {
-            correct = a / b;
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          a = minForMulDiv * 2;
-          b = minForMulDiv;
-          correct = 2;
-        }
+        b = randomInt(mulDivMin, mulDivMax);
+        const quotient = randomInt(mulDivMin, mulDivMax);
+        a = b * quotient;
+        correct = quotient;
       }
 
       return {
@@ -271,7 +290,8 @@
         operationLabel: operation.label,
         correct,
         userAnswer: null,
-        timeout: false
+        timeout: false,
+        elapsedSeconds: 0
       };
     }
 
@@ -279,7 +299,7 @@
       return `${question.operationType}:${question.a}:${question.b}`;
     }
 
-    function buildUniqueQuestions(questionCount, digitLength, operationTypes) {
+    function buildUniqueQuestions(questionCount, digitLength, operationTypes, mulDivRange) {
       const uniqueQuestions = [];
       const seen = new Set();
       const maxAttempts = Math.max(questionCount * 50, 1000);
@@ -287,7 +307,7 @@
 
       while (uniqueQuestions.length < questionCount && attempts < maxAttempts) {
         attempts += 1;
-        const question = generateQuestion(digitLength, operationTypes);
+        const question = generateQuestion(digitLength, operationTypes, mulDivRange);
         const key = getQuestionKey(question);
         if (seen.has(key)) {
           continue;
@@ -307,6 +327,7 @@
       if (opDivInput.checked) operationTypes.push('div');
       const questionCount = Number(questionCountInput.value);
       const digitLength = Number(digitLengthSelect.value);
+      const mulDivRange = mulDivRangeSelect.value;
       const timeMode = timeModeSelect.value;
       const timeLimit = Number(timeLimitInput.value);
 
@@ -314,6 +335,7 @@
       operationInputs.forEach((input) => setInvalid(input, false, input));
       setInvalid(questionCountInput, false);
       setInvalid(digitLengthSelect, false);
+      setInvalid(mulDivRangeSelect, false);
       setInvalid(timeLimitInput, false);
 
       if (operationTypes.length === 0) {
@@ -326,7 +348,11 @@
       }
       if (![1, 2, 3].includes(digitLength)) {
         setInvalid(digitLengthSelect, true);
-        return '數字長度設定不正確。';
+        return '加減數字上限設定不正確。';
+      }
+      if (!['9', '20'].includes(mulDivRange)) {
+        setInvalid(mulDivRangeSelect, true);
+        return '乘除出題範圍設定不正確。';
       }
       if (!['limited', 'unlimited'].includes(timeMode)) {
         return '時間模式設定不正確。';
@@ -340,6 +366,7 @@
         operationTypes,
         questionCount,
         digitLength,
+        mulDivRange,
         timeMode,
         timeLimit: timeMode === 'limited' ? timeLimit : 0
       };
@@ -354,9 +381,14 @@
         return;
       }
 
-      questions = buildUniqueQuestions(config.questionCount, config.digitLength, config.operationTypes);
+      questions = buildUniqueQuestions(
+        config.questionCount,
+        config.digitLength,
+        config.operationTypes,
+        config.mulDivRange
+      );
       if (questions.length < config.questionCount) {
-        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、數字長度或題目種類。');
+        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、加減數字上限、乘除出題範圍或題目種類。');
         return;
       }
       currentIndex = 0;
@@ -376,6 +408,7 @@
       progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
       questionText.textContent = `${q.a} ${q.operationSymbol} ${q.b} = ?`;
       answerInput.value = '';
+      currentQuestionStartedAt = Date.now();
       clearQuizError();
       setInvalid(answerInput, false);
       answerInput.focus();
@@ -393,9 +426,11 @@
       clearInterval(timerId);
 
       const q = questions[currentIndex];
+      const elapsed = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
       if (byTimeout) {
         q.userAnswer = null;
         q.timeout = true;
+        q.elapsedSeconds = config.timeMode === 'limited' ? config.timeLimit : elapsed;
       } else {
         const value = answerInput.value.trim();
         if (value === '') {
@@ -416,6 +451,7 @@
         clearQuizError();
         setInvalid(answerInput, false);
         q.userAnswer = parsedValue;
+        q.elapsedSeconds = elapsed;
       }
 
       currentIndex += 1;
@@ -434,6 +470,22 @@
       let correctCount = 0;
       let wrongCount = 0;
       resultBody.innerHTML = '';
+      const selectedOperations = config.operationTypes.map((type) => getOperationMeta(type).label).join('、');
+      const addSubRangeLabel = config.digitLength === 1 ? '1~9' : config.digitLength === 2 ? '1~99' : '1~999';
+      const mulDivRangeLabel = config.mulDivRange === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x11 ~ 20x20）';
+      const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
+      configSummaryList.innerHTML = '';
+      [
+        `題目種類：${selectedOperations}`,
+        `題目數量：${config.questionCount}`,
+        `加減數字上限：${addSubRangeLabel}`,
+        `乘除出題範圍：${mulDivRangeLabel}`,
+        `單題答題時間：${timeModeLabel}`
+      ].forEach((text) => {
+        const li = document.createElement('li');
+        li.textContent = text;
+        configSummaryList.appendChild(li);
+      });
 
       questions.forEach((q, index) => {
         const isCorrect = q.userAnswer === q.correct;
@@ -487,12 +539,17 @@
           resultTd.className = 'border border-slate-300 px-3 py-2 text-green-600';
         }
 
+        const elapsedTd = document.createElement('td');
+        elapsedTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        elapsedTd.textContent = `${q.elapsedSeconds} 秒`;
+
         tr.appendChild(indexTd);
         tr.appendChild(operationTd);
         tr.appendChild(problemTd);
         tr.appendChild(userTd);
         tr.appendChild(correctTd);
         tr.appendChild(resultTd);
+        tr.appendChild(elapsedTd);
         resultBody.appendChild(tr);
       });
 
@@ -501,16 +558,23 @@
 
     startBtn.addEventListener('click', startQuiz);
     submitBtn.addEventListener('click', () => submitCurrentAnswer(false));
-    clearBtn.addEventListener('click', () => {
+    function clearCurrentAnswer() {
       answerInput.value = '';
       clearQuizError();
       setInvalid(answerInput, false);
       answerInput.focus();
-    });
+    }
+    clearBtn.addEventListener('click', clearCurrentAnswer);
     leaveBtn.addEventListener('click', () => {
       const confirmed = window.confirm('確認要離開？將會直接顯示作答結果');
       if (!confirmed) {
         return;
+      }
+      if (currentIndex < questions.length) {
+        const q = questions[currentIndex];
+        if (!q.timeout && q.userAnswer === null) {
+          q.elapsedSeconds = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
+        }
       }
       endedEarly = true;
       clearInterval(timerId);
@@ -526,6 +590,9 @@
     answerInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         submitCurrentAnswer(false);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        clearCurrentAnswer();
       }
     });
     answerInput.addEventListener('input', () => {
@@ -550,6 +617,10 @@
     digitLengthSelect.addEventListener('change', () => {
       clearSetupError();
       setInvalid(digitLengthSelect, false);
+    });
+    mulDivRangeSelect.addEventListener('change', () => {
+      clearSetupError();
+      setInvalid(mulDivRangeSelect, false);
     });
     timeLimitInput.addEventListener('input', () => {
       clearSetupError();
