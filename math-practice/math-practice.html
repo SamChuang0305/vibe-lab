@@ -251,10 +251,20 @@
     function generateQuestion(digitLength, operationTypes, mulDivRanges) {
       const addSubMin = 1;
       const addSubMax = getAddSubMaxValue(digitLength);
-      const selectedMulDivRange = mulDivRanges[randomInt(0, mulDivRanges.length - 1)];
-      const { leftMin: mulLeftMin, leftMax: mulLeftMax, rightMin: mulRightMin, rightMax: mulRightMax } = getMulDivRange(selectedMulDivRange);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
+      let mulLeftMin = 2;
+      let mulLeftMax = 9;
+      let mulRightMin = 2;
+      let mulRightMax = 9;
+      if ((operationType === 'mul' || operationType === 'div') && mulDivRanges.length > 0) {
+        const selectedMulDivRange = mulDivRanges[randomInt(0, mulDivRanges.length - 1)];
+        const range = getMulDivRange(selectedMulDivRange);
+        mulLeftMin = range.leftMin;
+        mulLeftMax = range.leftMax;
+        mulRightMin = range.rightMin;
+        mulRightMax = range.rightMax;
+      }
 
       let a = randomInt(addSubMin, addSubMax);
       let b = randomInt(addSubMin, addSubMax);
@@ -353,6 +363,7 @@
         operationInputs.forEach((input) => setInvalid(input, true, input));
         return '題目種類至少需勾選一種。';
       }
+      const requiresMulDivRange = operationTypes.includes('mul') || operationTypes.includes('div');
       if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 200) {
         setInvalid(questionCountInput, true);
         return '題目數量請輸入 1 到 200 的整數。';
@@ -361,7 +372,7 @@
         setInvalid(digitLengthSelect, true);
         return '加減數字上限設定不正確。';
       }
-      if (mulDivRanges.length === 0) {
+      if (requiresMulDivRange && mulDivRanges.length === 0) {
         mulDivRangeInputs.forEach((input) => setInvalid(input, true, input.parentElement.parentElement));
         return '乘除出題範圍至少需勾選一種。';
       }
@@ -483,9 +494,12 @@
       resultBody.innerHTML = '';
       const selectedOperations = config.operationTypes.map((type) => getOperationMeta(type).label).join('、');
       const addSubRangeLabel = config.digitLength === 1 ? '1~9' : config.digitLength === 2 ? '1~99' : '1~999';
-      const mulDivRangeLabel = config.mulDivRanges
-        .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x2 ~ 20x20）'))
-        .join('、');
+      const usesMulDiv = config.operationTypes.includes('mul') || config.operationTypes.includes('div');
+      const mulDivRangeLabel = usesMulDiv
+        ? config.mulDivRanges
+          .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x2 ~ 20x20）'))
+          .join('、')
+        : '不適用';
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
       configSummaryList.innerHTML = '';
       [
