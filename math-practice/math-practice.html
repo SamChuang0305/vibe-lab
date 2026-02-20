@@ -474,16 +474,16 @@
         const resultTd = document.createElement('td');
         resultTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
         if (q.timeout) {
-          resultTd.textContent = '❌超時';
+          resultTd.textContent = '❌ 超時';
           resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
         } else if (q.userAnswer === null || Number.isNaN(q.userAnswer)) {
-          resultTd.textContent = '❌未作答';
+          resultTd.textContent = '❌ 未作答';
           resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
         } else if (!isCorrect) {
-          resultTd.textContent = '❌錯誤';
+          resultTd.textContent = '❌ 錯誤';
           resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
         } else {
-          resultTd.textContent = '🟢正確';
+          resultTd.textContent = '🟢 正確';
           resultTd.className = 'border border-slate-300 px-3 py-2 text-green-600';
         }
 
