@@ -370,11 +370,11 @@
       }
       if (![1, 2, 3].includes(digitLength)) {
         setInvalid(digitLengthSelect, true);
-        return '加減數字上限設定不正確。';
+        return '加、減法數字最大值設定不正確。';
       }
       if (requiresMulDivRange && mulDivRanges.length === 0) {
         mulDivRangeInputs.forEach((input) => setInvalid(input, true, input.parentElement.parentElement));
-        return '乘除出題範圍至少需勾選一種。';
+        return '乘、除法出題範圍至少需勾選一種。';
       }
       if (!['limited', 'unlimited'].includes(timeMode)) {
         return '時間模式設定不正確。';
@@ -410,7 +410,7 @@
         config.mulDivRanges
       );
       if (questions.length < config.questionCount) {
-        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、加減數字上限、乘除出題範圍或題目種類。');
+        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、加減法數字最大值、乘除法出題範圍或題目種類。');
         return;
       }
       currentIndex = 0;
@@ -505,8 +505,8 @@
       [
         `題目種類：${selectedOperations}`,
         `題目數量：${config.questionCount}`,
-        `加減數字上限：${addSubRangeLabel}`,
-        `乘除出題範圍：${mulDivRangeLabel}`,
+        `加、減法數字最大值：${addSubRangeLabel}`,
+        `乘、除法出題範圍：${mulDivRangeLabel}`,
         `單題答題時間：${timeModeLabel}`
       ].forEach((text) => {
         const li = document.createElement('li');
