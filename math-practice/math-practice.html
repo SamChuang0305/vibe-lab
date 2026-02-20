@@ -214,6 +214,7 @@
     function generateQuestion(digitLength, operationTypes) {
       const min = Math.pow(10, digitLength - 1);
       const max = Math.pow(10, digitLength) - 1;
+      const minForMulDiv = Math.max(min, 2);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
 
@@ -228,12 +229,14 @@
         }
         correct = a - b;
       } else if (operationType === 'mul') {
+        a = randomInt(minForMulDiv, max);
+        b = randomInt(minForMulDiv, max);
         correct = a * b;
       } else {
         let found = false;
         for (let i = 0; i < 500; i += 1) {
-          a = randomInt(min, max);
-          b = randomInt(min, max);
+          a = randomInt(minForMulDiv, max);
+          b = randomInt(minForMulDiv, max);
           if (a % b === 0) {
             correct = a / b;
             found = true;
@@ -241,8 +244,8 @@
           }
         }
         if (!found) {
-          a = min;
-          b = min;
+          a = minForMulDiv;
+          b = minForMulDiv;
           correct = 1;
         }
       }
