@@ -259,6 +259,30 @@
       };
     }
 
+    function getQuestionKey(question) {
+      return `${question.operationType}:${question.a}:${question.b}`;
+    }
+
+    function buildUniqueQuestions(questionCount, digitLength, operationTypes) {
+      const uniqueQuestions = [];
+      const seen = new Set();
+      const maxAttempts = Math.max(questionCount * 50, 1000);
+      let attempts = 0;
+
+      while (uniqueQuestions.length < questionCount && attempts < maxAttempts) {
+        attempts += 1;
+        const question = generateQuestion(digitLength, operationTypes);
+        const key = getQuestionKey(question);
+        if (seen.has(key)) {
+          continue;
+        }
+        seen.add(key);
+        uniqueQuestions.push(question);
+      }
+
+      return uniqueQuestions;
+    }
+
     function parseSetup() {
       const operationTypes = [];
       if (opAddInput.checked) operationTypes.push('add');
@@ -314,10 +338,11 @@
         return;
       }
 
-      questions = Array.from(
-        { length: config.questionCount },
-        () => generateQuestion(config.digitLength, config.operationTypes)
-      );
+      questions = buildUniqueQuestions(config.questionCount, config.digitLength, config.operationTypes);
+      if (questions.length < config.questionCount) {
+        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、數字長度或題目種類。');
+        return;
+      }
       currentIndex = 0;
       endedEarly = false;
 
