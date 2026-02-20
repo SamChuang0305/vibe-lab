@@ -237,16 +237,16 @@
         for (let i = 0; i < 500; i += 1) {
           a = randomInt(minForMulDiv, max);
           b = randomInt(minForMulDiv, max);
-          if (a % b === 0) {
+          if (a !== b && a % b === 0) {
             correct = a / b;
             found = true;
             break;
           }
         }
         if (!found) {
-          a = minForMulDiv;
+          a = minForMulDiv * 2;
           b = minForMulDiv;
-          correct = 1;
+          correct = 2;
         }
       }
 
