@@ -3,16 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>數學加法計算練習</title>
+  <title>數學計算練習</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
   <main class="mx-auto max-w-3xl px-4 py-8">
-    <h1 class="mb-6 text-2xl font-bold">數學加法計算練習</h1>
+    <h1 class="mb-6 text-2xl font-bold">數學計算練習</h1>
 
     <section id="setupPanel" class="rounded-lg bg-white p-6 shadow">
       <h2 class="mb-4 text-lg font-semibold">設定</h2>
       <div class="grid gap-4 sm:grid-cols-2">
+        <fieldset class="flex flex-col gap-2 sm:col-span-2">
+          <legend class="text-sm font-medium">題目種類</legend>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="inline-flex items-center gap-2">
+              <input id="opAdd" type="checkbox" value="add" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>加法計算</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input id="opSub" type="checkbox" value="sub" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>減法計算</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input id="opMul" type="checkbox" value="mul" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>乘法計算</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input id="opDiv" type="checkbox" value="div" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>除法計算</span>
+            </label>
+          </div>
+        </fieldset>
+
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">題目數量</span>
           <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
@@ -72,6 +94,7 @@
           <thead class="bg-slate-100">
             <tr>
               <th class="border border-slate-300 px-3 py-2">題號</th>
+              <th class="border border-slate-300 px-3 py-2">題目種類</th>
               <th class="border border-slate-300 px-3 py-2">題目</th>
               <th class="border border-slate-300 px-3 py-2">你的答案</th>
               <th class="border border-slate-300 px-3 py-2">正確答案</th>
@@ -97,6 +120,10 @@
     const timeLimitInput = document.getElementById('timeLimit');
     const secondsWrap = document.getElementById('secondsWrap');
     const setupError = document.getElementById('setupError');
+    const opAddInput = document.getElementById('opAdd');
+    const opSubInput = document.getElementById('opSub');
+    const opMulInput = document.getElementById('opMul');
+    const opDivInput = document.getElementById('opDiv');
 
     const startBtn = document.getElementById('startBtn');
     const progressText = document.getElementById('progressText');
@@ -119,16 +146,17 @@
     let remainingSeconds = 0;
     let endedEarly = false;
     let config = {
+      operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
       digitLength: 1,
       timeMode: 'limited',
       timeLimit: 10
     };
 
-    function setInvalid(input, isInvalid) {
-      input.classList.toggle('border-red-500', isInvalid);
-      input.classList.toggle('ring-2', isInvalid);
-      input.classList.toggle('ring-red-200', isInvalid);
+    function setInvalid(input, isInvalid, borderTarget = input) {
+      borderTarget.classList.toggle('border-red-500', isInvalid);
+      borderTarget.classList.toggle('ring-2', isInvalid);
+      borderTarget.classList.toggle('ring-red-200', isInvalid);
     }
 
     function showSetupError(message) {
@@ -170,24 +198,88 @@
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    function generateQuestion(digitLength) {
+    function getOperationMeta(type) {
+      if (type === 'add') {
+        return { symbol: '+', label: '加法計算' };
+      }
+      if (type === 'sub') {
+        return { symbol: '-', label: '減法計算' };
+      }
+      if (type === 'mul') {
+        return { symbol: '*', label: '乘法計算' };
+      }
+      return { symbol: '/', label: '除法計算' };
+    }
+
+    function generateQuestion(digitLength, operationTypes) {
       const min = Math.pow(10, digitLength - 1);
       const max = Math.pow(10, digitLength) - 1;
-      const a = randomInt(min, max);
-      const b = randomInt(min, max);
-      return { a, b, correct: a + b, userAnswer: null, timeout: false };
+      const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
+      const operation = getOperationMeta(operationType);
+
+      let a = randomInt(min, max);
+      let b = randomInt(min, max);
+      let correct = 0;
+      if (operationType === 'add') {
+        correct = a + b;
+      } else if (operationType === 'sub') {
+        if (a < b) {
+          [a, b] = [b, a];
+        }
+        correct = a - b;
+      } else if (operationType === 'mul') {
+        correct = a * b;
+      } else {
+        let found = false;
+        for (let i = 0; i < 500; i += 1) {
+          a = randomInt(min, max);
+          b = randomInt(min, max);
+          if (a % b === 0) {
+            correct = a / b;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          a = min;
+          b = min;
+          correct = 1;
+        }
+      }
+
+      return {
+        a,
+        b,
+        operationType,
+        operationSymbol: operation.symbol,
+        operationLabel: operation.label,
+        correct,
+        userAnswer: null,
+        timeout: false
+      };
     }
 
     function parseSetup() {
+      const operationTypes = [];
+      if (opAddInput.checked) operationTypes.push('add');
+      if (opSubInput.checked) operationTypes.push('sub');
+      if (opMulInput.checked) operationTypes.push('mul');
+      if (opDivInput.checked) operationTypes.push('div');
       const questionCount = Number(questionCountInput.value);
       const digitLength = Number(digitLengthSelect.value);
       const timeMode = timeModeSelect.value;
       const timeLimit = Number(timeLimitInput.value);
 
+      const operationInputs = [opAddInput, opSubInput, opMulInput, opDivInput];
+      operationInputs.forEach((input) => setInvalid(input, false, input));
       setInvalid(questionCountInput, false);
       setInvalid(digitLengthSelect, false);
       setInvalid(timeLimitInput, false);
 
+      if (operationTypes.length === 0) {
+        operationInputs.forEach((input) => setInvalid(input, true, input));
+        return '題目種類至少需勾選一種。';
+      }
       if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 200) {
         setInvalid(questionCountInput, true);
         return '題目數量請輸入 1 到 200 的整數。';
@@ -204,7 +296,13 @@
         return '限定秒數請輸入 1 到 600 的整數。';
       }
 
-      config = { questionCount, digitLength, timeMode, timeLimit: timeMode === 'limited' ? timeLimit : 0 };
+      config = {
+        operationTypes,
+        questionCount,
+        digitLength,
+        timeMode,
+        timeLimit: timeMode === 'limited' ? timeLimit : 0
+      };
       return null;
     }
 
@@ -216,7 +314,10 @@
         return;
       }
 
-      questions = Array.from({ length: config.questionCount }, () => generateQuestion(config.digitLength));
+      questions = Array.from(
+        { length: config.questionCount },
+        () => generateQuestion(config.digitLength, config.operationTypes)
+      );
       currentIndex = 0;
       endedEarly = false;
 
@@ -232,7 +333,7 @@
 
       const q = questions[currentIndex];
       progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
-      questionText.textContent = `${q.a} + ${q.b} = ?`;
+      questionText.textContent = `${q.a} ${q.operationSymbol} ${q.b} = ?`;
       answerInput.value = '';
       clearQuizError();
       setInvalid(answerInput, false);
@@ -309,7 +410,11 @@
 
         const problemTd = document.createElement('td');
         problemTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
-        problemTd.textContent = `${q.a} + ${q.b}`;
+        problemTd.textContent = `${q.a} ${q.operationSymbol} ${q.b}`;
+
+        const operationTd = document.createElement('td');
+        operationTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        operationTd.textContent = q.operationLabel;
 
         const userTd = document.createElement('td');
         userTd.className = `border border-slate-300 px-3 py-2 ${isCorrect ? 'text-slate-900' : 'text-red-600'}`;
@@ -342,6 +447,7 @@
         }
 
         tr.appendChild(indexTd);
+        tr.appendChild(operationTd);
         tr.appendChild(problemTd);
         tr.appendChild(userTd);
         tr.appendChild(correctTd);
@@ -393,6 +499,12 @@
     questionCountInput.addEventListener('input', () => {
       clearSetupError();
       setInvalid(questionCountInput, false);
+    });
+    [opAddInput, opSubInput, opMulInput, opDivInput].forEach((input) => {
+      input.addEventListener('change', () => {
+        clearSetupError();
+        setInvalid(input, false, input);
+      });
     });
     digitLengthSelect.addEventListener('change', () => {
       clearSetupError();
