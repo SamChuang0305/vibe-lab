@@ -41,8 +41,8 @@
         </label>
       </div>
 
-      <button id="startBtn" class="mt-6 rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">開始練習</button>
-      <p id="setupError" class="mt-3 text-sm text-red-600"></p>
+      <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
+      <p id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
     </section>
 
     <section id="quizPanel" class="hidden rounded-lg bg-white p-6 shadow">
@@ -54,10 +54,11 @@
       <p id="questionText" class="mb-4 text-3xl font-bold">1 + 2 = ?</p>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input id="answerInput" type="number" inputmode="numeric" class="w-52 rounded border border-slate-300 px-3 py-2" placeholder="請輸入答案" />
-        <button id="submitBtn" class="rounded bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700">送出</button>
-        <button id="clearBtn" class="rounded bg-slate-500 px-4 py-2 font-semibold text-white hover:bg-slate-600">清空</button>
+        <input id="answerInput" type="number" inputmode="numeric" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
+        <button id="submitBtn" class="w-full rounded bg-green-600 px-5 py-3 text-base font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 sm:w-auto">送出</button>
+        <button id="clearBtn" class="w-full rounded bg-slate-500 px-5 py-3 text-base font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">清空</button>
       </div>
+      <p id="quizError" class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700"></p>
     </section>
 
     <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
@@ -77,7 +78,7 @@
         </table>
       </div>
 
-      <button id="restartBtn" class="mt-6 rounded bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700">重新開始</button>
+      <button id="restartBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">重新開始</button>
     </section>
   </main>
 
@@ -100,6 +101,7 @@
     const answerInput = document.getElementById('answerInput');
     const submitBtn = document.getElementById('submitBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const quizError = document.getElementById('quizError');
 
     const scoreText = document.getElementById('scoreText');
     const resultBody = document.getElementById('resultBody');
@@ -115,6 +117,47 @@
       timeMode: 'limited',
       timeLimit: 10
     };
+
+    function setInvalid(input, isInvalid) {
+      input.classList.toggle('border-red-500', isInvalid);
+      input.classList.toggle('ring-2', isInvalid);
+      input.classList.toggle('ring-red-200', isInvalid);
+    }
+
+    function showSetupError(message) {
+      setupError.textContent = message;
+      setupError.classList.remove('hidden');
+    }
+
+    function clearSetupError() {
+      setupError.textContent = '';
+      setupError.classList.add('hidden');
+    }
+
+    function showQuizError(message) {
+      quizError.textContent = message;
+      quizError.classList.remove('hidden');
+    }
+
+    function clearQuizError() {
+      quizError.textContent = '';
+      quizError.classList.add('hidden');
+    }
+
+    function resumeTimerIfNeeded() {
+      if (config.timeMode !== 'limited') {
+        return;
+      }
+      timerId = setInterval(() => {
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          timerText.textContent = '剩餘時間：0 秒';
+          submitCurrentAnswer(true);
+          return;
+        }
+        timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
+      }, 1000);
+    }
 
     function randomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -134,16 +177,23 @@
       const timeMode = timeModeSelect.value;
       const timeLimit = Number(timeLimitInput.value);
 
+      setInvalid(questionCountInput, false);
+      setInvalid(digitLengthSelect, false);
+      setInvalid(timeLimitInput, false);
+
       if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 200) {
+        setInvalid(questionCountInput, true);
         return '題目數量請輸入 1 到 200 的整數。';
       }
       if (![1, 2, 3].includes(digitLength)) {
+        setInvalid(digitLengthSelect, true);
         return '數字長度設定不正確。';
       }
       if (!['limited', 'unlimited'].includes(timeMode)) {
         return '時間模式設定不正確。';
       }
       if (timeMode === 'limited' && (!Number.isInteger(timeLimit) || timeLimit < 1 || timeLimit > 600)) {
+        setInvalid(timeLimitInput, true);
         return '限定秒數請輸入 1 到 600 的整數。';
       }
 
@@ -152,10 +202,10 @@
     }
 
     function startQuiz() {
-      setupError.textContent = '';
+      clearSetupError();
       const error = parseSetup();
       if (error) {
-        setupError.textContent = error;
+        showSetupError(error);
         return;
       }
 
@@ -176,20 +226,14 @@
       progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
       questionText.textContent = `${q.a} + ${q.b} = ?`;
       answerInput.value = '';
+      clearQuizError();
+      setInvalid(answerInput, false);
       answerInput.focus();
 
       if (config.timeMode === 'limited') {
         remainingSeconds = config.timeLimit;
         timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
-        timerId = setInterval(() => {
-          remainingSeconds -= 1;
-          if (remainingSeconds <= 0) {
-            timerText.textContent = '剩餘時間：0 秒';
-            submitCurrentAnswer(true);
-            return;
-          }
-          timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
-        }, 1000);
+        resumeTimerIfNeeded();
       } else {
         timerText.textContent = '剩餘時間：無時間限制';
       }
@@ -204,7 +248,24 @@
         q.timeout = true;
       } else {
         const value = answerInput.value.trim();
-        q.userAnswer = value === '' ? null : Number(value);
+        if (value === '') {
+          showQuizError('請先輸入答案再送出。');
+          setInvalid(answerInput, true);
+          answerInput.focus();
+          resumeTimerIfNeeded();
+          return;
+        }
+        const parsedValue = Number(value);
+        if (!Number.isFinite(parsedValue)) {
+          showQuizError('答案格式不正確，請輸入數字。');
+          setInvalid(answerInput, true);
+          answerInput.focus();
+          resumeTimerIfNeeded();
+          return;
+        }
+        clearQuizError();
+        setInvalid(answerInput, false);
+        q.userAnswer = parsedValue;
       }
 
       currentIndex += 1;
@@ -264,6 +325,8 @@
     submitBtn.addEventListener('click', () => submitCurrentAnswer(false));
     clearBtn.addEventListener('click', () => {
       answerInput.value = '';
+      clearQuizError();
+      setInvalid(answerInput, false);
       answerInput.focus();
     });
     restartBtn.addEventListener('click', () => {
@@ -278,10 +341,26 @@
         submitCurrentAnswer(false);
       }
     });
+    answerInput.addEventListener('input', () => {
+      clearQuizError();
+      setInvalid(answerInput, false);
+    });
 
     timeModeSelect.addEventListener('change', () => {
       const isLimited = timeModeSelect.value === 'limited';
       secondsWrap.classList.toggle('hidden', !isLimited);
+    });
+    questionCountInput.addEventListener('input', () => {
+      clearSetupError();
+      setInvalid(questionCountInput, false);
+    });
+    digitLengthSelect.addEventListener('change', () => {
+      clearSetupError();
+      setInvalid(digitLengthSelect, false);
+    });
+    timeLimitInput.addEventListener('input', () => {
+      clearSetupError();
+      setInvalid(timeLimitInput, false);
     });
   </script>
 </body>
