@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>數學加法計算練習</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  <main class="mx-auto max-w-3xl px-4 py-8">
+    <h1 class="mb-6 text-2xl font-bold">數學加法計算練習</h1>
+
+    <section id="setupPanel" class="rounded-lg bg-white p-6 shadow">
+      <h2 class="mb-4 text-lg font-semibold">設定</h2>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">題目數量</span>
+          <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">數字長度</span>
+          <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
+            <option value="1">個位數</option>
+            <option value="2">十位數</option>
+            <option value="3">百位數</option>
+          </select>
+        </label>
+
+        <label class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-sm font-medium">單題答題時間</span>
+          <select id="timeMode" class="rounded border border-slate-300 px-3 py-2">
+            <option value="limited" selected>限定秒數</option>
+            <option value="unlimited">無時間限制</option>
+          </select>
+        </label>
+
+        <label id="secondsWrap" class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-sm font-medium">秒數（預設 10 秒）</span>
+          <input id="timeLimit" type="number" min="1" max="600" value="10" class="rounded border border-slate-300 px-3 py-2" />
+        </label>
+      </div>
+
+      <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
+      <p id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
+    </section>
+
+    <section id="quizPanel" class="hidden rounded-lg bg-white p-6 shadow">
+      <div class="mb-3 flex items-center justify-between text-sm text-slate-600">
+        <p id="progressText">第 1 / 10 題</p>
+        <p id="timerText">剩餘時間：10 秒</p>
+      </div>
+
+      <p id="questionText" class="mb-4 text-3xl font-bold">1 + 2 = ?</p>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="answerInput" type="number" inputmode="numeric" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
+        <button id="submitBtn" class="w-full rounded bg-green-600 px-5 py-3 text-base font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 sm:w-auto">送出</button>
+        <button id="clearBtn" class="w-full rounded bg-slate-500 px-5 py-3 text-base font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">清空</button>
+        <button id="leaveBtn" class="w-full rounded bg-rose-600 px-5 py-3 text-base font-semibold text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto">離開</button>
+      </div>
+      <p id="quizError" class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700"></p>
+    </section>
+
+    <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
+      <h2 class="mb-4 text-lg font-semibold">作答結果</h2>
+      <p id="scoreText" class="mb-4 text-base font-medium"></p>
+      <p id="earlyExitText" class="mb-4 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">提早結束</p>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border border-slate-300 text-left text-sm">
+          <thead class="bg-slate-100">
+            <tr>
+              <th class="border border-slate-300 px-3 py-2">題號</th>
+              <th class="border border-slate-300 px-3 py-2">題目</th>
+              <th class="border border-slate-300 px-3 py-2">你的答案</th>
+              <th class="border border-slate-300 px-3 py-2">正確答案</th>
+              <th class="border border-slate-300 px-3 py-2">作答結果</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </div>
+
+      <button id="restartBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">重新開始</button>
+    </section>
+  </main>
+
+  <script>
+    const setupPanel = document.getElementById('setupPanel');
+    const quizPanel = document.getElementById('quizPanel');
+    const resultPanel = document.getElementById('resultPanel');
+
+    const questionCountInput = document.getElementById('questionCount');
+    const digitLengthSelect = document.getElementById('digitLength');
+    const timeModeSelect = document.getElementById('timeMode');
+    const timeLimitInput = document.getElementById('timeLimit');
+    const secondsWrap = document.getElementById('secondsWrap');
+    const setupError = document.getElementById('setupError');
+
+    const startBtn = document.getElementById('startBtn');
+    const progressText = document.getElementById('progressText');
+    const timerText = document.getElementById('timerText');
+    const questionText = document.getElementById('questionText');
+    const answerInput = document.getElementById('answerInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const leaveBtn = document.getElementById('leaveBtn');
+    const quizError = document.getElementById('quizError');
+
+    const scoreText = document.getElementById('scoreText');
+    const earlyExitText = document.getElementById('earlyExitText');
+    const resultBody = document.getElementById('resultBody');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let questions = [];
+    let currentIndex = 0;
+    let timerId = null;
+    let remainingSeconds = 0;
+    let endedEarly = false;
+    let config = {
+      questionCount: 10,
+      digitLength: 1,
+      timeMode: 'limited',
+      timeLimit: 10
+    };
+
+    function setInvalid(input, isInvalid) {
+      input.classList.toggle('border-red-500', isInvalid);
+      input.classList.toggle('ring-2', isInvalid);
+      input.classList.toggle('ring-red-200', isInvalid);
+    }
+
+    function showSetupError(message) {
+      setupError.textContent = message;
+      setupError.classList.remove('hidden');
+    }
+
+    function clearSetupError() {
+      setupError.textContent = '';
+      setupError.classList.add('hidden');
+    }
+
+    function showQuizError(message) {
+      quizError.textContent = message;
+      quizError.classList.remove('hidden');
+    }
+
+    function clearQuizError() {
+      quizError.textContent = '';
+      quizError.classList.add('hidden');
+    }
+
+    function resumeTimerIfNeeded() {
+      if (config.timeMode !== 'limited') {
+        return;
+      }
+      timerId = setInterval(() => {
+        remainingSeconds -= 1;
+        if (remainingSeconds <= 0) {
+          timerText.textContent = '剩餘時間：0 秒';
+          submitCurrentAnswer(true);
+          return;
+        }
+        timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
+      }, 1000);
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function generateQuestion(digitLength) {
+      const min = Math.pow(10, digitLength - 1);
+      const max = Math.pow(10, digitLength) - 1;
+      const a = randomInt(min, max);
+      const b = randomInt(min, max);
+      return { a, b, correct: a + b, userAnswer: null, timeout: false };
+    }
+
+    function parseSetup() {
+      const questionCount = Number(questionCountInput.value);
+      const digitLength = Number(digitLengthSelect.value);
+      const timeMode = timeModeSelect.value;
+      const timeLimit = Number(timeLimitInput.value);
+
+      setInvalid(questionCountInput, false);
+      setInvalid(digitLengthSelect, false);
+      setInvalid(timeLimitInput, false);
+
+      if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 200) {
+        setInvalid(questionCountInput, true);
+        return '題目數量請輸入 1 到 200 的整數。';
+      }
+      if (![1, 2, 3].includes(digitLength)) {
+        setInvalid(digitLengthSelect, true);
+        return '數字長度設定不正確。';
+      }
+      if (!['limited', 'unlimited'].includes(timeMode)) {
+        return '時間模式設定不正確。';
+      }
+      if (timeMode === 'limited' && (!Number.isInteger(timeLimit) || timeLimit < 1 || timeLimit > 600)) {
+        setInvalid(timeLimitInput, true);
+        return '限定秒數請輸入 1 到 600 的整數。';
+      }
+
+      config = { questionCount, digitLength, timeMode, timeLimit: timeMode === 'limited' ? timeLimit : 0 };
+      return null;
+    }
+
+    function startQuiz() {
+      clearSetupError();
+      const error = parseSetup();
+      if (error) {
+        showSetupError(error);
+        return;
+      }
+
+      questions = Array.from({ length: config.questionCount }, () => generateQuestion(config.digitLength));
+      currentIndex = 0;
+      endedEarly = false;
+
+      setupPanel.classList.add('hidden');
+      resultPanel.classList.add('hidden');
+      quizPanel.classList.remove('hidden');
+
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      clearInterval(timerId);
+
+      const q = questions[currentIndex];
+      progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
+      questionText.textContent = `${q.a} + ${q.b} = ?`;
+      answerInput.value = '';
+      clearQuizError();
+      setInvalid(answerInput, false);
+      answerInput.focus();
+
+      if (config.timeMode === 'limited') {
+        remainingSeconds = config.timeLimit;
+        timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
+        resumeTimerIfNeeded();
+      } else {
+        timerText.textContent = '剩餘時間：無時間限制';
+      }
+    }
+
+    function submitCurrentAnswer(byTimeout = false) {
+      clearInterval(timerId);
+
+      const q = questions[currentIndex];
+      if (byTimeout) {
+        q.userAnswer = null;
+        q.timeout = true;
+      } else {
+        const value = answerInput.value.trim();
+        if (value === '') {
+          showQuizError('請先輸入答案再送出。');
+          setInvalid(answerInput, true);
+          answerInput.focus();
+          resumeTimerIfNeeded();
+          return;
+        }
+        const parsedValue = Number(value);
+        if (!Number.isFinite(parsedValue)) {
+          showQuizError('答案格式不正確，請輸入數字。');
+          setInvalid(answerInput, true);
+          answerInput.focus();
+          resumeTimerIfNeeded();
+          return;
+        }
+        clearQuizError();
+        setInvalid(answerInput, false);
+        q.userAnswer = parsedValue;
+      }
+
+      currentIndex += 1;
+      if (currentIndex >= questions.length) {
+        finishQuiz();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function finishQuiz() {
+      quizPanel.classList.add('hidden');
+      resultPanel.classList.remove('hidden');
+      earlyExitText.classList.toggle('hidden', !endedEarly);
+
+      let correctCount = 0;
+      let wrongCount = 0;
+      resultBody.innerHTML = '';
+
+      questions.forEach((q, index) => {
+        const isCorrect = q.userAnswer === q.correct;
+        if (isCorrect) {
+          correctCount += 1;
+        } else {
+          wrongCount += 1;
+        }
+
+        const tr = document.createElement('tr');
+
+        const indexTd = document.createElement('td');
+        indexTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        indexTd.textContent = String(index + 1);
+
+        const problemTd = document.createElement('td');
+        problemTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        problemTd.textContent = `${q.a} + ${q.b}`;
+
+        const userTd = document.createElement('td');
+        userTd.className = `border border-slate-300 px-3 py-2 ${isCorrect ? 'text-slate-900' : 'text-red-600'}`;
+        if (q.timeout) {
+          userTd.textContent = '超時';
+        } else if (q.userAnswer === null || Number.isNaN(q.userAnswer)) {
+          userTd.textContent = '(未作答)';
+        } else {
+          userTd.textContent = String(q.userAnswer);
+        }
+
+        const correctTd = document.createElement('td');
+        correctTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        correctTd.textContent = String(q.correct);
+
+        const resultTd = document.createElement('td');
+        resultTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        if (q.timeout) {
+          resultTd.textContent = '❌超時';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else if (q.userAnswer === null || Number.isNaN(q.userAnswer)) {
+          resultTd.textContent = '❌未作答';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else if (!isCorrect) {
+          resultTd.textContent = '❌錯誤';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-red-600';
+        } else {
+          resultTd.textContent = '🟢正確';
+          resultTd.className = 'border border-slate-300 px-3 py-2 text-green-600';
+        }
+
+        tr.appendChild(indexTd);
+        tr.appendChild(problemTd);
+        tr.appendChild(userTd);
+        tr.appendChild(correctTd);
+        tr.appendChild(resultTd);
+        resultBody.appendChild(tr);
+      });
+
+      scoreText.textContent = `答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
+    }
+
+    startBtn.addEventListener('click', startQuiz);
+    submitBtn.addEventListener('click', () => submitCurrentAnswer(false));
+    clearBtn.addEventListener('click', () => {
+      answerInput.value = '';
+      clearQuizError();
+      setInvalid(answerInput, false);
+      answerInput.focus();
+    });
+    leaveBtn.addEventListener('click', () => {
+      const confirmed = window.confirm('確認要離開？將會直接顯示作答結果');
+      if (!confirmed) {
+        return;
+      }
+      endedEarly = true;
+      clearInterval(timerId);
+      finishQuiz();
+    });
+    restartBtn.addEventListener('click', () => {
+      clearInterval(timerId);
+      resultPanel.classList.add('hidden');
+      quizPanel.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+    });
+
+    answerInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        submitCurrentAnswer(false);
+      }
+    });
+    answerInput.addEventListener('input', () => {
+      clearQuizError();
+      setInvalid(answerInput, false);
+    });
+
+    timeModeSelect.addEventListener('change', () => {
+      const isLimited = timeModeSelect.value === 'limited';
+      secondsWrap.classList.toggle('hidden', !isLimited);
+    });
+    questionCountInput.addEventListener('input', () => {
+      clearSetupError();
+      setInvalid(questionCountInput, false);
+    });
+    digitLengthSelect.addEventListener('change', () => {
+      clearSetupError();
+      setInvalid(digitLengthSelect, false);
+    });
+    timeLimitInput.addEventListener('input', () => {
+      clearSetupError();
+      setInvalid(timeLimitInput, false);
+    });
+  </script>
+</body>
+</html>
