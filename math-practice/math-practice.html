@@ -18,19 +18,19 @@
           <div class="grid gap-2 sm:grid-cols-2">
             <label class="inline-flex items-center gap-2">
               <input id="opAdd" type="checkbox" value="add" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>加法計算</span>
+              <span>加法計算 ➕</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opSub" type="checkbox" value="sub" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>減法計算</span>
+              <span>減法計算 ➖</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opMul" type="checkbox" value="mul" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>乘法計算</span>
+              <span>乘法計算 ✖</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opDiv" type="checkbox" value="div" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>除法計算</span>
+              <span>除法計算 ➗</span>
             </label>
           </div>
         </fieldset>
@@ -200,15 +200,15 @@
 
     function getOperationMeta(type) {
       if (type === 'add') {
-        return { symbol: '+', label: '加法計算' };
+        return { symbol: '+', label: '加法計算 ➕' };
       }
       if (type === 'sub') {
-        return { symbol: '-', label: '減法計算' };
+        return { symbol: '-', label: '減法計算 ➖' };
       }
       if (type === 'mul') {
-        return { symbol: '*', label: '乘法計算' };
+        return { symbol: '*', label: '乘法計算 ✖' };
       }
-      return { symbol: '/', label: '除法計算' };
+      return { symbol: '/', label: '除法計算 ➗' };
     }
 
     function generateQuestion(digitLength, operationTypes) {
