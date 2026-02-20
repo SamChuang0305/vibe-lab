@@ -49,13 +49,19 @@
           </select>
         </label>
 
-        <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">乘除出題範圍</span>
-          <select id="mulDivRange" class="rounded border border-slate-300 px-3 py-2">
-            <option value="9" selected>9x9（2x2 ~ 9x9）</option>
-            <option value="20">20x20（11x11 ~ 20x20）</option>
-          </select>
-        </label>
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-medium">乘除出題範圍</legend>
+          <div class="flex flex-col gap-2 rounded border border-slate-300 px-3 py-2">
+            <label class="inline-flex items-center gap-2">
+              <input id="mulDivRange9" type="checkbox" value="9" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>9x9（2x2 ~ 9x9）</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input id="mulDivRange20" type="checkbox" value="20" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span>20x20（11x11 ~ 20x20）</span>
+            </label>
+          </div>
+        </fieldset>
 
         <label class="flex flex-col gap-1 sm:col-span-2">
           <span class="text-sm font-medium">單題答題時間</span>
@@ -131,7 +137,8 @@
     const digitLengthSelect = document.getElementById('digitLength');
     const timeModeSelect = document.getElementById('timeMode');
     const timeLimitInput = document.getElementById('timeLimit');
-    const mulDivRangeSelect = document.getElementById('mulDivRange');
+    const mulDivRange9Input = document.getElementById('mulDivRange9');
+    const mulDivRange20Input = document.getElementById('mulDivRange20');
     const secondsWrap = document.getElementById('secondsWrap');
     const setupError = document.getElementById('setupError');
     const opAddInput = document.getElementById('opAdd');
@@ -165,7 +172,7 @@
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
       digitLength: 1,
-      mulDivRange: '9',
+      mulDivRanges: ['9', '20'],
       timeMode: 'limited',
       timeLimit: 10
     };
@@ -241,10 +248,11 @@
       return { min: 2, max: 9 };
     }
 
-    function generateQuestion(digitLength, operationTypes, mulDivRange) {
+    function generateQuestion(digitLength, operationTypes, mulDivRanges) {
       const addSubMin = 1;
       const addSubMax = getAddSubMaxValue(digitLength);
-      const { min: mulDivMin, max: mulDivMax } = getMulDivRange(mulDivRange);
+      const selectedMulDivRange = mulDivRanges[randomInt(0, mulDivRanges.length - 1)];
+      const { min: mulDivMin, max: mulDivMax } = getMulDivRange(selectedMulDivRange);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
 
@@ -299,7 +307,7 @@
       return `${question.operationType}:${question.a}:${question.b}`;
     }
 
-    function buildUniqueQuestions(questionCount, digitLength, operationTypes, mulDivRange) {
+    function buildUniqueQuestions(questionCount, digitLength, operationTypes, mulDivRanges) {
       const uniqueQuestions = [];
       const seen = new Set();
       const maxAttempts = Math.max(questionCount * 50, 1000);
@@ -307,7 +315,7 @@
 
       while (uniqueQuestions.length < questionCount && attempts < maxAttempts) {
         attempts += 1;
-        const question = generateQuestion(digitLength, operationTypes, mulDivRange);
+        const question = generateQuestion(digitLength, operationTypes, mulDivRanges);
         const key = getQuestionKey(question);
         if (seen.has(key)) {
           continue;
@@ -327,15 +335,18 @@
       if (opDivInput.checked) operationTypes.push('div');
       const questionCount = Number(questionCountInput.value);
       const digitLength = Number(digitLengthSelect.value);
-      const mulDivRange = mulDivRangeSelect.value;
+      const mulDivRanges = [];
+      if (mulDivRange9Input.checked) mulDivRanges.push('9');
+      if (mulDivRange20Input.checked) mulDivRanges.push('20');
       const timeMode = timeModeSelect.value;
       const timeLimit = Number(timeLimitInput.value);
 
       const operationInputs = [opAddInput, opSubInput, opMulInput, opDivInput];
+      const mulDivRangeInputs = [mulDivRange9Input, mulDivRange20Input];
       operationInputs.forEach((input) => setInvalid(input, false, input));
+      mulDivRangeInputs.forEach((input) => setInvalid(input, false, input.parentElement.parentElement));
       setInvalid(questionCountInput, false);
       setInvalid(digitLengthSelect, false);
-      setInvalid(mulDivRangeSelect, false);
       setInvalid(timeLimitInput, false);
 
       if (operationTypes.length === 0) {
@@ -350,9 +361,9 @@
         setInvalid(digitLengthSelect, true);
         return '加減數字上限設定不正確。';
       }
-      if (!['9', '20'].includes(mulDivRange)) {
-        setInvalid(mulDivRangeSelect, true);
-        return '乘除出題範圍設定不正確。';
+      if (mulDivRanges.length === 0) {
+        mulDivRangeInputs.forEach((input) => setInvalid(input, true, input.parentElement.parentElement));
+        return '乘除出題範圍至少需勾選一種。';
       }
       if (!['limited', 'unlimited'].includes(timeMode)) {
         return '時間模式設定不正確。';
@@ -366,7 +377,7 @@
         operationTypes,
         questionCount,
         digitLength,
-        mulDivRange,
+        mulDivRanges,
         timeMode,
         timeLimit: timeMode === 'limited' ? timeLimit : 0
       };
@@ -385,7 +396,7 @@
         config.questionCount,
         config.digitLength,
         config.operationTypes,
-        config.mulDivRange
+        config.mulDivRanges
       );
       if (questions.length < config.questionCount) {
         showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、加減數字上限、乘除出題範圍或題目種類。');
@@ -472,7 +483,9 @@
       resultBody.innerHTML = '';
       const selectedOperations = config.operationTypes.map((type) => getOperationMeta(type).label).join('、');
       const addSubRangeLabel = config.digitLength === 1 ? '1~9' : config.digitLength === 2 ? '1~99' : '1~999';
-      const mulDivRangeLabel = config.mulDivRange === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x11 ~ 20x20）';
+      const mulDivRangeLabel = config.mulDivRanges
+        .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x11 ~ 20x20）'))
+        .join('、');
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
       configSummaryList.innerHTML = '';
       [
@@ -618,9 +631,11 @@
       clearSetupError();
       setInvalid(digitLengthSelect, false);
     });
-    mulDivRangeSelect.addEventListener('change', () => {
-      clearSetupError();
-      setInvalid(mulDivRangeSelect, false);
+    [mulDivRange9Input, mulDivRange20Input].forEach((input) => {
+      input.addEventListener('change', () => {
+        clearSetupError();
+        setInvalid(input, false, input.parentElement.parentElement);
+      });
     });
     timeLimitInput.addEventListener('input', () => {
       clearSetupError();
