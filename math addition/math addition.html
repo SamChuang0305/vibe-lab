@@ -65,11 +65,13 @@
     <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <h2 class="mb-4 text-lg font-semibold">作答結果</h2>
       <p id="scoreText" class="mb-4 text-base font-medium"></p>
+      <p id="earlyExitText" class="mb-4 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">提早結束</p>
 
       <div class="overflow-x-auto">
         <table class="min-w-full border border-slate-300 text-left text-sm">
           <thead class="bg-slate-100">
             <tr>
+              <th class="border border-slate-300 px-3 py-2">題號</th>
               <th class="border border-slate-300 px-3 py-2">題目</th>
               <th class="border border-slate-300 px-3 py-2">你的答案</th>
               <th class="border border-slate-300 px-3 py-2">正確答案</th>
@@ -107,6 +109,7 @@
     const quizError = document.getElementById('quizError');
 
     const scoreText = document.getElementById('scoreText');
+    const earlyExitText = document.getElementById('earlyExitText');
     const resultBody = document.getElementById('resultBody');
     const restartBtn = document.getElementById('restartBtn');
 
@@ -114,6 +117,7 @@
     let currentIndex = 0;
     let timerId = null;
     let remainingSeconds = 0;
+    let endedEarly = false;
     let config = {
       questionCount: 10,
       digitLength: 1,
@@ -167,7 +171,7 @@
     }
 
     function generateQuestion(digitLength) {
-      const min = digitLength === 1 ? 0 : Math.pow(10, digitLength - 1);
+      const min = Math.pow(10, digitLength - 1);
       const max = Math.pow(10, digitLength) - 1;
       const a = randomInt(min, max);
       const b = randomInt(min, max);
@@ -214,6 +218,7 @@
 
       questions = Array.from({ length: config.questionCount }, () => generateQuestion(config.digitLength));
       currentIndex = 0;
+      endedEarly = false;
 
       setupPanel.classList.add('hidden');
       resultPanel.classList.add('hidden');
@@ -282,12 +287,13 @@
     function finishQuiz() {
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
+      earlyExitText.classList.toggle('hidden', !endedEarly);
 
       let correctCount = 0;
       let wrongCount = 0;
       resultBody.innerHTML = '';
 
-      questions.forEach((q) => {
+      questions.forEach((q, index) => {
         const isCorrect = q.userAnswer === q.correct;
         if (isCorrect) {
           correctCount += 1;
@@ -296,6 +302,10 @@
         }
 
         const tr = document.createElement('tr');
+
+        const indexTd = document.createElement('td');
+        indexTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
+        indexTd.textContent = String(index + 1);
 
         const problemTd = document.createElement('td');
         problemTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
@@ -330,6 +340,7 @@
           resultTd.textContent = '';
         }
 
+        tr.appendChild(indexTd);
         tr.appendChild(problemTd);
         tr.appendChild(userTd);
         tr.appendChild(correctTd);
@@ -353,6 +364,7 @@
       if (!confirmed) {
         return;
       }
+      endedEarly = true;
       clearInterval(timerId);
       finishQuiz();
     });
