@@ -36,12 +36,12 @@
         </fieldset>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">題目數量</span>
+          <span class="text-sm font-medium">題目數量（1~200）</span>
           <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">加減數字上限</span>
+          <span class="text-sm font-medium">加、減法數字最大值</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
             <option value="1">個位數（1~9）</option>
             <option value="2">十位數（1~99）</option>
@@ -50,7 +50,7 @@
         </label>
 
         <fieldset class="flex flex-col gap-2">
-          <legend class="text-sm font-medium">乘除出題範圍</legend>
+          <legend class="text-sm font-medium">乘、除法出題範圍（至少必須選一種，可複選）</legend>
           <div class="flex flex-col gap-2 rounded border border-slate-300 px-3 py-2">
             <label class="inline-flex items-center gap-2">
               <input id="mulDivRange9" type="checkbox" value="9" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
@@ -72,8 +72,8 @@
         </label>
 
         <label id="secondsWrap" class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">秒數（預設 10 秒）</span>
-          <input id="timeLimit" type="number" min="1" max="600" value="10" class="rounded border border-slate-300 px-3 py-2" />
+          <span class="text-sm font-medium">秒數（1~60，預設 10 秒）</span>
+          <input id="timeLimit" type="number" min="1" max="60" value="10" class="rounded border border-slate-300 px-3 py-2" />
         </label>
       </div>
 
@@ -368,9 +368,9 @@
       if (!['limited', 'unlimited'].includes(timeMode)) {
         return '時間模式設定不正確。';
       }
-      if (timeMode === 'limited' && (!Number.isInteger(timeLimit) || timeLimit < 1 || timeLimit > 600)) {
+      if (timeMode === 'limited' && (!Number.isInteger(timeLimit) || timeLimit < 1 || timeLimit > 60)) {
         setInvalid(timeLimitInput, true);
-        return '限定秒數請輸入 1 到 600 的整數。';
+        return '限定秒數請輸入 1 到 60 的整數。';
       }
 
       config = {
