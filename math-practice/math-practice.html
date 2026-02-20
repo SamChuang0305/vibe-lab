@@ -73,7 +73,7 @@
         <p id="timerText">剩餘時間：10 秒</p>
       </div>
 
-      <p id="questionText" class="mb-4 text-3xl font-bold">1 + 2 = ?</p>
+      <p id="questionText" class="mb-4 text-3xl font-bold">1 ➕ 2 = ?</p>
 
       <div class="flex flex-wrap items-center gap-2">
         <input id="answerInput" type="number" inputmode="numeric" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
@@ -200,15 +200,15 @@
 
     function getOperationMeta(type) {
       if (type === 'add') {
-        return { symbol: '+', label: '加法計算 ➕' };
+        return { symbol: '➕', label: '加法計算 ➕' };
       }
       if (type === 'sub') {
-        return { symbol: '-', label: '減法計算 ➖' };
+        return { symbol: '➖', label: '減法計算 ➖' };
       }
       if (type === 'mul') {
-        return { symbol: '*', label: '乘法計算 ✖' };
+        return { symbol: '✖', label: '乘法計算 ✖' };
       }
-      return { symbol: '/', label: '除法計算 ➗' };
+      return { symbol: '➗', label: '除法計算 ➗' };
     }
 
     function generateQuestion(digitLength, operationTypes) {
