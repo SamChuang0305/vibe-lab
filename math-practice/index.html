@@ -80,11 +80,11 @@
           <span class="text-sm font-medium">血條模式（預設：關閉）</span>
           <select id="hpMode" class="rounded border border-slate-300 px-3 py-2">
             <option value="off" selected>關閉</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
+            <option value="1">❤️</option>
+            <option value="2">❤️❤️</option>
+            <option value="3">❤️❤️❤️</option>
+            <option value="4">❤️❤️❤️❤️</option>
+            <option value="5">❤️❤️❤️❤️❤️</option>
           </select>
         </label>
       </div>
@@ -591,7 +591,7 @@
           .join('、')
         : '不適用';
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
-      const hpModeLabel = config.maxHp > 0 ? `${config.maxHp}` : '關閉';
+      const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '關閉';
       configSummaryList.innerHTML = '';
       [
         `題目種類：${selectedOperations}`,
