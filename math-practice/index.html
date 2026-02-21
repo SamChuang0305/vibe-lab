@@ -114,6 +114,7 @@
     <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <h2 class="mb-4 text-lg font-semibold">作答結果</h2>
       <p id="scoreText" class="mb-4 text-base font-medium"></p>
+      <p id="encourageText" class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"></p>
       <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
         <p class="mb-2 text-sm font-semibold text-slate-700">本次關卡設定</p>
         <ul id="configSummaryList" class="list-disc space-y-1 pl-5 text-sm text-slate-700"></ul>
@@ -170,6 +171,7 @@
     const quizError = document.getElementById('quizError');
 
     const scoreText = document.getElementById('scoreText');
+    const encourageText = document.getElementById('encourageText');
     const configSummaryList = document.getElementById('configSummaryList');
     const earlyExitText = document.getElementById('earlyExitText');
     const resultBody = document.getElementById('resultBody');
@@ -603,6 +605,56 @@
       });
 
       scoreText.textContent = `答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
+      const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+      const encourageLevel = accuracy === 100
+        ? 100
+        : accuracy >= 80
+          ? 80
+          : accuracy >= 60
+            ? 60
+            : accuracy >= 20
+              ? 20
+              : 0;
+      const encouragePool = {
+        0: [
+          '沒關係！每一題都是新的起點，我們再試一次。',
+          '你願意挑戰就很棒！慢慢來，會越來越熟練。',
+          '今天先認識題目，下一次一定更進步。',
+          '勇敢嘗試就是成功的一半，繼續加油！',
+          '錯題也是學習的寶藏，我們一起找到答案。'
+        ],
+        20: [
+          '有進步的感覺了！再多練幾題就會更穩。',
+          '做得不錯喔！每一次練習都在變強。',
+          '很好！你已經答對一些題目了。',
+          '一步一步來，你的努力看得見。',
+          '保持節奏，接下來會越來越順。'
+        ],
+        60: [
+          '很不錯！多數題目都答對了。',
+          '你已經很熟練了，再衝刺一下就更完美。',
+          '表現很棒！再多練就會更快更準。',
+          '做得很好！你正在穩穩進步中。',
+          '這成績很有水準，繼續保持。'
+        ],
+        80: [
+          '太厲害了！你幾乎都答對。',
+          '超棒的表現！再一點點就滿分。',
+          '你很強！維持這樣的狀態。',
+          '高分高手！繼續挑戰更快的速度。',
+          '真棒！你已經非常接近滿分了。'
+        ],
+        100: [
+          '滿分！你是數學小高手。',
+          '完美表現！太強了。',
+          '恭喜全對！你真的很厲害。',
+          '太棒了！每一題都答對。',
+          '超級棒！這是滿分的成績。'
+        ]
+      };
+      const pool = encouragePool[encourageLevel];
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      encourageText.textContent = pool[randomIndex];
     }
 
     startBtn.addEventListener('click', startQuiz);
