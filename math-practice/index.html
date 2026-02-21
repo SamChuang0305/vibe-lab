@@ -79,6 +79,19 @@
 
       <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
       <p id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
+
+      <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+        <h3 class="text-base font-semibold text-slate-800">說明</h3>
+        <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <li>隨機產生數學計算題目。</li>
+          <li>題型固定為 a、b 兩個數字做四則計算。</li>
+          <li>題目中的 a、b 兩個數字都不會小於 0。</li>
+          <li>若題目種類為乘法或除法，題目中的 a、b 兩個數字都不會出現 1。</li>
+          <li>若題目種類為減法或除法，題目中的 a、b 兩個數字不會相同。</li>
+          <li>題目計算結果不會小於 0、只會有整數。</li>
+          <li>題目不會重複出現。</li>
+        </ul>
+      </div>
     </section>
 
     <section id="quizPanel" class="hidden rounded-lg bg-white p-6 shadow">
