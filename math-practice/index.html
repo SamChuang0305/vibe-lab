@@ -444,6 +444,15 @@
       }
     }
 
+    function normalizeAnswerValue() {
+      const rawValue = answerInput.value;
+      const normalizedValue = rawValue.replace(/\s+/g, '');
+      if (rawValue !== normalizedValue) {
+        answerInput.value = normalizedValue;
+      }
+      return normalizedValue;
+    }
+
     function submitCurrentAnswer(byTimeout = false) {
       clearInterval(timerId);
 
@@ -454,7 +463,7 @@
         q.timeout = true;
         q.elapsedSeconds = config.timeMode === 'limited' ? config.timeLimit : elapsed;
       } else {
-        const value = answerInput.value.trim();
+        const value = normalizeAnswerValue();
         if (value === '') {
           showQuizError('請先輸入答案再送出。');
           setInvalid(answerInput, true);
@@ -625,6 +634,7 @@
     answerInput.addEventListener('input', () => {
       clearQuizError();
       setInvalid(answerInput, false);
+      normalizeAnswerValue();
     });
 
     timeModeSelect.addEventListener('change', () => {
