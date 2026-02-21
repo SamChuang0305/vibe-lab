@@ -11,26 +11,26 @@
     <h1 class="mb-6 text-2xl font-bold">數學計算練習</h1>
 
     <section id="setupPanel" class="rounded-lg bg-white p-6 shadow">
-      <h2 class="mb-4 text-lg font-semibold">設定</h2>
+      <h2 class="mb-4 text-lg font-semibold">關卡設定</h2>
       <div class="grid gap-4 sm:grid-cols-2">
         <fieldset class="flex flex-col gap-2 sm:col-span-2">
-          <legend class="text-sm font-medium">題目種類</legend>
-          <div class="grid gap-2 sm:grid-cols-2">
+          <legend class="text-sm font-medium">題目種類（至少必須選一種，可複選）</legend>
+          <div class="grid gap-2 sm:grid-cols-2 rounded border border-slate-300 px-3 py-2">
             <label class="inline-flex items-center gap-2">
               <input id="opAdd" type="checkbox" value="add" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>加法計算 ➕</span>
+              <span>加法 ➕</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opSub" type="checkbox" value="sub" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>減法計算 ➖</span>
+              <span>減法 ➖</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opMul" type="checkbox" value="mul" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>乘法計算 ✖</span>
+              <span>乘法 ✖</span>
             </label>
             <label class="inline-flex items-center gap-2">
               <input id="opDiv" type="checkbox" value="div" checked class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-              <span>除法計算 ➗</span>
+              <span>除法 ➗</span>
             </label>
           </div>
         </fieldset>
@@ -224,15 +224,15 @@
 
     function getOperationMeta(type) {
       if (type === 'add') {
-        return { symbol: '➕', label: '加法計算 ➕' };
+        return { symbol: '➕', label: '加法 ➕' };
       }
       if (type === 'sub') {
-        return { symbol: '➖', label: '減法計算 ➖' };
+        return { symbol: '➖', label: '減法 ➖' };
       }
       if (type === 'mul') {
-        return { symbol: '✖', label: '乘法計算 ✖' };
+        return { symbol: '✖', label: '乘法 ✖' };
       }
-      return { symbol: '➗', label: '除法計算 ➗' };
+      return { symbol: '➗', label: '除法 ➗' };
     }
 
     function getAddSubMaxValue(digitLength) {
