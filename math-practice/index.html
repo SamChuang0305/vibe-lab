@@ -212,6 +212,7 @@
     let endedEarly = false;
     let endedByHpZero = false;
     let currentHp = 0;
+    let gameOverModalOpenedAt = 0;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
@@ -523,6 +524,7 @@
 
     function showGameOverModal() {
       clearInterval(timerId);
+      gameOverModalOpenedAt = Date.now();
       gameOverModal.classList.remove('hidden');
       gameOverModal.classList.add('flex');
       document.body.classList.add('overflow-hidden');
@@ -798,6 +800,9 @@
       setupPanel.classList.remove('hidden');
     });
     gameOverCloseBtn.addEventListener('click', () => {
+      if (Date.now() - gameOverModalOpenedAt < 350) {
+        return;
+      }
       finishQuiz('hp_zero');
     });
 
