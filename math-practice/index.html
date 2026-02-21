@@ -155,6 +155,13 @@
 
       <button id="restartBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">重新開始</button>
     </section>
+
+    <div id="gameOverModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 px-4">
+      <div class="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-2xl">
+        <p class="text-3xl font-extrabold tracking-wide text-rose-600">💥 GAME OVER！</p>
+        <button id="gameOverCloseBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">關閉</button>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -194,6 +201,8 @@
     const hpZeroText = document.getElementById('hpZeroText');
     const resultBody = document.getElementById('resultBody');
     const restartBtn = document.getElementById('restartBtn');
+    const gameOverModal = document.getElementById('gameOverModal');
+    const gameOverCloseBtn = document.getElementById('gameOverCloseBtn');
 
     let questions = [];
     let currentIndex = 0;
@@ -462,6 +471,7 @@
       endedEarly = false;
       endedByHpZero = false;
       currentHp = config.maxHp;
+      hideGameOverModal();
 
       setupPanel.classList.add('hidden');
       resultPanel.classList.add('hidden');
@@ -501,6 +511,25 @@
       return normalizedValue;
     }
 
+    function isGameOverModalOpen() {
+      return !gameOverModal.classList.contains('hidden');
+    }
+
+    function hideGameOverModal() {
+      gameOverModal.classList.add('hidden');
+      gameOverModal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    function showGameOverModal() {
+      clearInterval(timerId);
+      gameOverModal.classList.remove('hidden');
+      gameOverModal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+      answerInput.blur();
+      gameOverCloseBtn.focus();
+    }
+
     function renderHp() {
       if (config.maxHp <= 0) {
         hpText.textContent = '';
@@ -519,13 +548,16 @@
       currentHp = Math.max(0, currentHp - 1);
       renderHp();
       if (currentHp === 0) {
-        finishQuiz('hp_zero');
+        showGameOverModal();
         return true;
       }
       return false;
     }
 
     function submitCurrentAnswer(byTimeout = false) {
+      if (isGameOverModalOpen()) {
+        return;
+      }
       clearInterval(timerId);
 
       const q = questions[currentIndex];
@@ -572,6 +604,7 @@
     }
 
     function finishQuiz(endReason = 'normal') {
+      hideGameOverModal();
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
       endedEarly = endReason === 'early_leave';
@@ -759,12 +792,20 @@
     });
     restartBtn.addEventListener('click', () => {
       clearInterval(timerId);
+      hideGameOverModal();
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');
     });
+    gameOverCloseBtn.addEventListener('click', () => {
+      finishQuiz('hp_zero');
+    });
 
     answerInput.addEventListener('keydown', (event) => {
+      if (isGameOverModalOpen()) {
+        event.preventDefault();
+        return;
+      }
       if (event.key === 'Enter') {
         submitCurrentAnswer(false);
       } else if (event.key === 'Escape') {
