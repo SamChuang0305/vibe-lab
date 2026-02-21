@@ -707,7 +707,10 @@
         resultBody.appendChild(tr);
       });
 
-      scoreText.textContent = `答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
+      const hpStatus = config.maxHp > 0
+        ? `${'❤️'.repeat(Math.max(0, Math.min(currentHp, config.maxHp)))}${'🖤'.repeat(config.maxHp - Math.max(0, Math.min(currentHp, config.maxHp)))} `
+        : '';
+      scoreText.textContent = `${hpStatus}答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
       const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
       const encourageLevel = accuracy === 100
         ? 100
