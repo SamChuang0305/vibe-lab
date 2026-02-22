@@ -132,6 +132,7 @@
     <section id="quizPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <div class="mb-3 flex items-center justify-between text-sm text-slate-600">
         <p id="progressText">第 1 / 10 題</p>
+        <button id="soundToggleBtn" type="button" class="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-300 text-lg leading-none text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="音效已開啟，點擊關閉">🔊</button>
         <p id="timerText">剩餘時間：10 秒</p>
       </div>
 
@@ -208,6 +209,7 @@
 
     const startBtn = document.getElementById('startBtn');
     const progressText = document.getElementById('progressText');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
     const timerText = document.getElementById('timerText');
     const questionText = document.getElementById('questionText');
     const answerInput = document.getElementById('answerInput');
@@ -416,6 +418,18 @@
         return;
       }
       playTone({ freq: 330, durationMs: 180, type: 'sine', gain: 0.08 });
+    }
+
+    function renderSoundToggle() {
+      const isOn = config.soundMode === 'on';
+      soundToggleBtn.textContent = isOn ? '🔊' : '🔇';
+      soundToggleBtn.setAttribute('aria-label', isOn ? '音效已開啟，點擊關閉' : '音效已關閉，點擊開啟');
+    }
+
+    function toggleQuizSoundMode() {
+      config.soundMode = config.soundMode === 'on' ? 'off' : 'on';
+      soundModeSelect.value = config.soundMode;
+      renderSoundToggle();
     }
 
     function resumeTimerIfNeeded() {
@@ -702,6 +716,7 @@
       quizStartedAtMs = Date.now();
       quizEndedAtMs = null;
       hideGameOverModal();
+      renderSoundToggle();
 
       setupPanel.classList.add('hidden');
       resultPanel.classList.add('hidden');
@@ -1065,6 +1080,7 @@
       }
       finishQuiz('hp_zero');
     });
+    soundToggleBtn.addEventListener('click', toggleQuizSoundMode);
 
     answerInput.addEventListener('keydown', (event) => {
       if (isGameOverModalOpen()) {
@@ -1119,7 +1135,10 @@
     soundModeSelect.addEventListener('change', () => {
       clearSetupError();
       setInvalid(soundModeSelect, false);
+      config.soundMode = soundModeSelect.value;
+      renderSoundToggle();
     });
+    renderSoundToggle();
   </script>
 </body>
 </html>
