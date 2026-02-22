@@ -176,7 +176,11 @@
         </table>
       </div>
 
-      <button id="restartBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">重新開始</button>
+      <p id="pdfError" class="mt-4 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
+      <div id="resultActions" class="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <button id="downloadPdfBtn" class="w-full rounded bg-emerald-600 px-5 py-3 text-base font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 sm:w-auto">下載 PDF</button>
+        <button id="restartBtn" class="w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">重新開始</button>
+      </div>
     </section>
 
     <div id="gameOverModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 px-4">
@@ -187,6 +191,8 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script>
     const setupPanel = document.getElementById('setupPanel');
     const quizPanel = document.getElementById('quizPanel');
@@ -225,6 +231,9 @@
     const earlyExitText = document.getElementById('earlyExitText');
     const hpZeroText = document.getElementById('hpZeroText');
     const resultBody = document.getElementById('resultBody');
+    const pdfError = document.getElementById('pdfError');
+    const resultActions = document.getElementById('resultActions');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
     const restartBtn = document.getElementById('restartBtn');
     const gameOverModal = document.getElementById('gameOverModal');
     const gameOverCloseBtn = document.getElementById('gameOverCloseBtn');
@@ -242,6 +251,7 @@
     let quizEndedAtMs = null;
     let audioContext = null;
     let audioUnlocked = false;
+    let isExportingPdf = false;
     const SOUND_GAIN_MULTIPLIER = 1.6;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
@@ -281,8 +291,112 @@
       quizError.classList.add('hidden');
     }
 
+    function showPdfError(message) {
+      pdfError.textContent = message;
+      pdfError.classList.remove('hidden');
+    }
+
+    function clearPdfError() {
+      pdfError.textContent = '';
+      pdfError.classList.add('hidden');
+    }
+
     function pad2(value) {
       return String(value).padStart(2, '0');
+    }
+
+    function formatFileTimestamp(timestampMs) {
+      const date = new Date(timestampMs);
+      return `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}-${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`;
+    }
+
+    function buildPdfFilename(timestampMs) {
+      return `數學計算練習-${formatFileTimestamp(timestampMs)}.pdf`;
+    }
+
+    function setPdfExportLoading(isLoading) {
+      isExportingPdf = isLoading;
+      downloadPdfBtn.disabled = isLoading;
+      downloadPdfBtn.textContent = isLoading ? 'PDF 產生中...' : '下載 PDF';
+      downloadPdfBtn.classList.toggle('opacity-60', isLoading);
+      downloadPdfBtn.classList.toggle('cursor-not-allowed', isLoading);
+    }
+
+    async function captureResultPanelToCanvas() {
+      const wasActionsHidden = resultActions.classList.contains('hidden');
+      resultActions.classList.add('hidden');
+      const originalOverflow = resultPanel.style.overflow;
+      resultPanel.style.overflow = 'visible';
+      try {
+        await new Promise((resolve) => window.requestAnimationFrame(resolve));
+        const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+        return await window.html2canvas(resultPanel, {
+          backgroundColor: '#ffffff',
+          scale,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: document.documentElement.clientWidth
+        });
+      } finally {
+        resultPanel.style.overflow = originalOverflow;
+        if (!wasActionsHidden) {
+          resultActions.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function exportResultToPdf() {
+      if (isExportingPdf) {
+        return;
+      }
+      clearPdfError();
+      if (resultPanel.classList.contains('hidden')) {
+        showPdfError('請先完成作答並進入結果頁，再下載 PDF。');
+        return;
+      }
+      if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+        showPdfError('PDF 匯出套件載入失敗，請重新整理後再試。');
+        return;
+      }
+
+      setPdfExportLoading(true);
+      try {
+        const canvas = await captureResultPanelToCanvas();
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'p',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+        const margin = 10;
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const contentWidth = pageWidth - margin * 2;
+        const contentHeight = pageHeight - margin * 2;
+        const imageHeight = (canvas.height * contentWidth) / canvas.width;
+        const imageData = canvas.toDataURL('image/png');
+
+        let heightLeft = imageHeight;
+        let positionY = margin;
+        pdf.addImage(imageData, 'PNG', margin, positionY, contentWidth, imageHeight, undefined, 'FAST');
+        heightLeft -= contentHeight;
+        while (heightLeft > 0) {
+          pdf.addPage();
+          positionY = margin - (imageHeight - heightLeft);
+          pdf.addImage(imageData, 'PNG', margin, positionY, contentWidth, imageHeight, undefined, 'FAST');
+          heightLeft -= contentHeight;
+        }
+
+        const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
+        pdf.save(buildPdfFilename(timestamp));
+      } catch (error) {
+        showPdfError('PDF 匯出失敗，請稍後再試。');
+      } finally {
+        setPdfExportLoading(false);
+      }
     }
 
     function formatUtcOffset(date) {
@@ -869,6 +983,8 @@
       hideGameOverModal();
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
+      clearPdfError();
+      setPdfExportLoading(false);
       endedEarly = endReason === 'early_leave';
       endedByHpZero = endReason === 'hp_zero';
       earlyExitText.classList.toggle('hidden', !endedEarly);
@@ -1070,10 +1186,13 @@
     restartBtn.addEventListener('click', () => {
       clearInterval(timerId);
       hideGameOverModal();
+      clearPdfError();
+      setPdfExportLoading(false);
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');
     });
+    downloadPdfBtn.addEventListener('click', exportResultToPdf);
     gameOverCloseBtn.addEventListener('click', () => {
       if (Date.now() - gameOverModalOpenedAt < 350) {
         return;
