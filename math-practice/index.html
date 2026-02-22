@@ -351,37 +351,37 @@
         return;
       }
       if (kind === 'correct') {
-        playTone({ freq: 880, durationMs: 140, type: 'triangle', gain: 0.05 });
-        setTimeout(() => playTone({ freq: 1175, durationMs: 140, type: 'triangle', gain: 0.05 }), 90);
+        playTone({ freq: 880, durationMs: 140, type: 'triangle', gain: 0.10 });
+        setTimeout(() => playTone({ freq: 1175, durationMs: 140, type: 'triangle', gain: 0.10 }), 90);
         return;
       }
       if (kind === 'wrong') {
-        playTone({ freq: 220, durationMs: 220, type: 'sawtooth', gain: 0.045 });
+        playTone({ freq: 220, durationMs: 220, type: 'sawtooth', gain: 0.075 });
         return;
       }
       if (kind === 'timeout') {
-        playTone({ freq: 320, durationMs: 120, type: 'square', gain: 0.04 });
-        setTimeout(() => playTone({ freq: 280, durationMs: 120, type: 'square', gain: 0.04 }), 120);
+        playTone({ freq: 320, durationMs: 120, type: 'square', gain: 0.08 });
+        setTimeout(() => playTone({ freq: 280, durationMs: 120, type: 'square', gain: 0.08 }), 120);
         return;
       }
       if (kind === 'result_high') {
-        playTone({ freq: 784, durationMs: 140, type: 'triangle', gain: 0.05 });
-        setTimeout(() => playTone({ freq: 988, durationMs: 140, type: 'triangle', gain: 0.05 }), 110);
-        setTimeout(() => playTone({ freq: 1319, durationMs: 220, type: 'triangle', gain: 0.05 }), 220);
+        playTone({ freq: 784, durationMs: 140, type: 'triangle', gain: 0.10 });
+        setTimeout(() => playTone({ freq: 988, durationMs: 140, type: 'triangle', gain: 0.10 }), 110);
+        setTimeout(() => playTone({ freq: 1319, durationMs: 220, type: 'triangle', gain: 0.10 }), 220);
         return;
       }
       if (kind === 'result_mid') {
-        playTone({ freq: 659, durationMs: 120, type: 'triangle', gain: 0.045 });
-        setTimeout(() => playTone({ freq: 784, durationMs: 120, type: 'triangle', gain: 0.045 }), 110);
+        playTone({ freq: 659, durationMs: 120, type: 'triangle', gain: 0.09 });
+        setTimeout(() => playTone({ freq: 784, durationMs: 120, type: 'triangle', gain: 0.09 }), 110);
         return;
       }
       if (kind === 'game_over') {
-        playTone({ freq: 180, durationMs: 220, type: 'sawtooth', gain: 0.06, attackMs: 2, releaseMs: 120 });
-        setTimeout(() => playTone({ freq: 120, durationMs: 260, type: 'square', gain: 0.05, attackMs: 2, releaseMs: 140 }), 90);
-        setTimeout(() => playTone({ freq: 80, durationMs: 320, type: 'sawtooth', gain: 0.045, attackMs: 2, releaseMs: 180 }), 160);
+        playTone({ freq: 180, durationMs: 220, type: 'sawtooth', gain: 0.24, attackMs: 2, releaseMs: 120 });
+        setTimeout(() => playTone({ freq: 120, durationMs: 260, type: 'square', gain: 0.20, attackMs: 2, releaseMs: 140 }), 90);
+        setTimeout(() => playTone({ freq: 80, durationMs: 320, type: 'sawtooth', gain: 0.18, attackMs: 2, releaseMs: 180 }), 160);
         return;
       }
-      playTone({ freq: 330, durationMs: 180, type: 'sine', gain: 0.04 });
+      playTone({ freq: 330, durationMs: 180, type: 'sine', gain: 0.08 });
     }
 
     function resumeTimerIfNeeded() {
