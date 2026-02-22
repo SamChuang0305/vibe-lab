@@ -546,6 +546,14 @@
       config.soundMode = config.soundMode === 'on' ? 'off' : 'on';
       soundModeSelect.value = config.soundMode;
       renderSoundToggle();
+      if (quizPanel.classList.contains('hidden') || isGameOverModalOpen()) {
+        return;
+      }
+      try {
+        answerInput.focus({ preventScroll: true });
+      } catch (error) {
+        answerInput.focus();
+      }
     }
 
     function resumeTimerIfNeeded() {
