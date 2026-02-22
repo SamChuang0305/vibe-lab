@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>數學計算練習</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      body {
+        background: #fff !important;
+      }
+      main {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      h1,
+      #setupPanel,
+      #quizPanel,
+      #resultActions,
+      #pdfError {
+        display: none !important;
+      }
+      #resultPanel {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-900">
   <main class="mx-auto max-w-3xl px-4 py-8">
@@ -311,12 +337,26 @@
       return `數學計算練習-${formatFileTimestamp(timestampMs)}.pdf`;
     }
 
+    function isFirefoxBrowser() {
+      return /firefox/i.test(window.navigator.userAgent || '');
+    }
+
     function setPdfExportLoading(isLoading) {
       isExportingPdf = isLoading;
       downloadPdfBtn.disabled = isLoading;
       downloadPdfBtn.textContent = isLoading ? 'PDF 產生中...' : '下載 PDF';
       downloadPdfBtn.classList.toggle('opacity-60', isLoading);
       downloadPdfBtn.classList.toggle('cursor-not-allowed', isLoading);
+    }
+
+    function exportResultToPdfByPrint() {
+      const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
+      const originalTitle = document.title;
+      document.title = buildPdfFilename(timestamp).replace(/\.pdf$/i, '');
+      window.addEventListener('afterprint', () => {
+        document.title = originalTitle;
+      }, { once: true });
+      window.print();
     }
 
     async function captureResultPanelToCanvas() {
@@ -326,7 +366,8 @@
       resultPanel.style.overflow = 'visible';
       try {
         await new Promise((resolve) => window.requestAnimationFrame(resolve));
-        const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+        const isFirefox = isFirefoxBrowser();
+        const scale = isFirefox ? 1 : Math.min(2, Math.max(1, window.devicePixelRatio || 1));
         return await window.html2canvas(resultPanel, {
           backgroundColor: '#ffffff',
           scale,
@@ -334,7 +375,8 @@
           logging: false,
           scrollX: 0,
           scrollY: 0,
-          windowWidth: document.documentElement.clientWidth
+          windowWidth: document.documentElement.clientWidth,
+          windowHeight: Math.max(document.documentElement.clientHeight, resultPanel.scrollHeight)
         });
       } finally {
         resultPanel.style.overflow = originalOverflow;
@@ -357,6 +399,10 @@
         showPdfError('PDF 匯出套件載入失敗，請重新整理後再試。');
         return;
       }
+      if (isFirefoxBrowser()) {
+        exportResultToPdfByPrint();
+        return;
+      }
 
       setPdfExportLoading(true);
       try {
@@ -373,18 +419,43 @@
         const pageHeight = pdf.internal.pageSize.getHeight();
         const contentWidth = pageWidth - margin * 2;
         const contentHeight = pageHeight - margin * 2;
-        const imageHeight = (canvas.height * contentWidth) / canvas.width;
-        const imageData = canvas.toDataURL('image/png');
+        const pagePixelHeight = Math.max(1, Math.floor((contentHeight * canvas.width) / contentWidth));
+        const imageFormat = 'PNG';
+        const imageCompression = 'FAST';
 
-        let heightLeft = imageHeight;
-        let positionY = margin;
-        pdf.addImage(imageData, 'PNG', margin, positionY, contentWidth, imageHeight, undefined, 'FAST');
-        heightLeft -= contentHeight;
-        while (heightLeft > 0) {
-          pdf.addPage();
-          positionY = margin - (imageHeight - heightLeft);
-          pdf.addImage(imageData, 'PNG', margin, positionY, contentWidth, imageHeight, undefined, 'FAST');
-          heightLeft -= contentHeight;
+        let pageIndex = 0;
+        for (let offsetY = 0; offsetY < canvas.height; offsetY += pagePixelHeight) {
+          const sliceHeight = Math.min(pagePixelHeight, canvas.height - offsetY);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const pageCtx = pageCanvas.getContext('2d');
+          if (!pageCtx) {
+            throw new Error('無法建立 PDF 分頁畫布');
+          }
+          pageCtx.fillStyle = '#ffffff';
+          pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          pageCtx.drawImage(
+            canvas,
+            0,
+            offsetY,
+            canvas.width,
+            sliceHeight,
+            0,
+            0,
+            canvas.width,
+            sliceHeight
+          );
+          const renderedHeight = (sliceHeight * contentWidth) / canvas.width;
+          const pageImageSource = pageCanvas.toDataURL('image/png');
+
+          if (pageIndex > 0) {
+            pdf.addPage();
+          }
+          pdf.setFillColor(255, 255, 255);
+          pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+          pdf.addImage(pageImageSource, imageFormat, margin, margin, contentWidth, renderedHeight, undefined, imageCompression);
+          pageIndex += 1;
         }
 
         const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
