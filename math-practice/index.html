@@ -238,6 +238,7 @@
     let gameOverModalOpenedAt = 0;
     let audioContext = null;
     let audioUnlocked = false;
+    const SOUND_GAIN_MULTIPLIER = 1.35;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
@@ -328,12 +329,13 @@
         const duration = durationMs / 1000;
         const attack = attackMs / 1000;
         const release = releaseMs / 1000;
+        const scaledGain = Math.min(gain * SOUND_GAIN_MULTIPLIER, 0.12);
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(freq, now);
         gainNode.gain.setValueAtTime(0.0001, now);
-        gainNode.gain.exponentialRampToValueAtTime(gain, now + Math.max(attack, 0.001));
+        gainNode.gain.exponentialRampToValueAtTime(scaledGain, now + Math.max(attack, 0.001));
         gainNode.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(duration - release, attack + 0.001));
         oscillator.connect(gainNode);
         gainNode.connect(ctx.destination);
