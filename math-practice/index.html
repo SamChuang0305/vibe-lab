@@ -373,6 +373,12 @@
         setTimeout(() => playTone({ freq: 784, durationMs: 120, type: 'triangle', gain: 0.045 }), 110);
         return;
       }
+      if (kind === 'game_over') {
+        playTone({ freq: 180, durationMs: 220, type: 'sawtooth', gain: 0.06, attackMs: 2, releaseMs: 120 });
+        setTimeout(() => playTone({ freq: 120, durationMs: 260, type: 'square', gain: 0.05, attackMs: 2, releaseMs: 140 }), 90);
+        setTimeout(() => playTone({ freq: 80, durationMs: 320, type: 'sawtooth', gain: 0.045, attackMs: 2, releaseMs: 180 }), 160);
+        return;
+      }
       playTone({ freq: 330, durationMs: 180, type: 'sine', gain: 0.04 });
     }
 
@@ -664,6 +670,7 @@
       document.body.classList.add('overflow-hidden');
       answerInput.blur();
       gameOverCloseBtn.focus();
+      playSound('game_over');
     }
 
     function renderHp() {
@@ -690,6 +697,10 @@
       return false;
     }
 
+    function willHpReachZeroAfterDeduct() {
+      return config.maxHp > 0 && currentHp === 1;
+    }
+
     function submitCurrentAnswer(byTimeout = false) {
       if (isGameOverModalOpen()) {
         return;
@@ -699,10 +710,13 @@
       const q = questions[currentIndex];
       const elapsed = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
       if (byTimeout) {
+        const willGameOver = willHpReachZeroAfterDeduct();
         q.userAnswer = null;
         q.timeout = true;
         q.elapsedSeconds = config.timeMode === 'limited' ? config.timeLimit : elapsed;
-        playSound('timeout');
+        if (!willGameOver) {
+          playSound('timeout');
+        }
         if (deductHpAndCheckEnd()) {
           return;
         }
@@ -727,7 +741,11 @@
         setInvalid(answerInput, false);
         q.userAnswer = parsedValue;
         q.elapsedSeconds = elapsed;
-        playSound(q.userAnswer === q.correct ? 'correct' : 'wrong');
+        const isCorrect = q.userAnswer === q.correct;
+        const willGameOver = !isCorrect && willHpReachZeroAfterDeduct();
+        if (!willGameOver) {
+          playSound(isCorrect ? 'correct' : 'wrong');
+        }
         if (q.userAnswer !== q.correct && deductHpAndCheckEnd()) {
           return;
         }
