@@ -498,6 +498,47 @@
       return `${question.operationType}:${question.a}:${question.b}`;
     }
 
+    function calculateMulMaxUniqueCount(mulDivRanges) {
+      return mulDivRanges.reduce((total, rangeType) => {
+        const range = getMulDivRange(rangeType);
+        const leftCount = range.leftMax - range.leftMin + 1;
+        const rightCount = range.rightMax - range.rightMin + 1;
+        return total + leftCount * rightCount;
+      }, 0);
+    }
+
+    function calculateDivMaxUniqueCount(mulDivRanges) {
+      const divSet = new Set();
+      mulDivRanges.forEach((rangeType) => {
+        const range = getMulDivRange(rangeType);
+        for (let b = range.rightMin; b <= range.rightMax; b += 1) {
+          for (let quotient = range.leftMin; quotient <= range.leftMax; quotient += 1) {
+            const a = b * quotient;
+            divSet.add(`${a}:${b}`);
+          }
+        }
+      });
+      return divSet.size;
+    }
+
+    function calculateMaxUniqueCount(digitLength, operationTypes, mulDivRanges) {
+      const addSubMax = getAddSubMaxValue(digitLength);
+      let total = 0;
+      if (operationTypes.includes('add')) {
+        total += addSubMax * addSubMax;
+      }
+      if (operationTypes.includes('sub')) {
+        total += (addSubMax * (addSubMax - 1)) / 2;
+      }
+      if (operationTypes.includes('mul')) {
+        total += calculateMulMaxUniqueCount(mulDivRanges);
+      }
+      if (operationTypes.includes('div')) {
+        total += calculateDivMaxUniqueCount(mulDivRanges);
+      }
+      return total;
+    }
+
     function buildUniqueQuestions(questionCount, digitLength, operationTypes, mulDivRanges) {
       const uniqueQuestions = [];
       const seen = new Set();
@@ -600,6 +641,16 @@
         return;
       }
 
+      const maxUniqueCount = calculateMaxUniqueCount(
+        config.digitLength,
+        config.operationTypes,
+        config.mulDivRanges
+      );
+      if (config.questionCount > maxUniqueCount) {
+        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加減法數字最大值、乘除法出題範圍或題目種類。`);
+        return;
+      }
+
       questions = buildUniqueQuestions(
         config.questionCount,
         config.digitLength,
@@ -607,7 +658,7 @@
         config.mulDivRanges
       );
       if (questions.length < config.questionCount) {
-        showSetupError('在目前設定下無法產生足夠的不重複題目，請調整題目數量、加減法數字最大值、乘除法出題範圍或題目種類。');
+        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加減法數字最大值、乘除法出題範圍或題目種類。`);
         return;
       }
       currentIndex = 0;
