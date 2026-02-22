@@ -87,6 +87,14 @@
             <option value="5">❤️❤️❤️❤️❤️</option>
           </select>
         </label>
+
+        <label class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-sm font-medium">音效（預設：開啟）</span>
+          <select id="soundMode" class="rounded border border-slate-300 px-3 py-2">
+            <option value="on" selected>開啟</option>
+            <option value="off">關閉</option>
+          </select>
+        </label>
       </div>
 
       <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
@@ -188,6 +196,7 @@
     const timeModeSelect = document.getElementById('timeMode');
     const timeLimitInput = document.getElementById('timeLimit');
     const hpModeSelect = document.getElementById('hpMode');
+    const soundModeSelect = document.getElementById('soundMode');
     const mulDivRange9Input = document.getElementById('mulDivRange9');
     const mulDivRange20Input = document.getElementById('mulDivRange20');
     const secondsWrap = document.getElementById('secondsWrap');
@@ -227,6 +236,8 @@
     let endedByHpZero = false;
     let currentHp = 0;
     let gameOverModalOpenedAt = 0;
+    let audioContext = null;
+    let audioUnlocked = false;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
@@ -235,7 +246,8 @@
       timeMode: 'limited',
       timeLimit: 10,
       hpMode: 'off',
-      maxHp: 0
+      maxHp: 0,
+      soundMode: 'on'
     };
 
     function setInvalid(input, isInvalid, borderTarget = input) {
@@ -262,6 +274,106 @@
     function clearQuizError() {
       quizError.textContent = '';
       quizError.classList.add('hidden');
+    }
+
+    function ensureAudioContext() {
+      if (audioContext) {
+        return audioContext;
+      }
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        return null;
+      }
+      audioContext = new AudioContextClass();
+      return audioContext;
+    }
+
+    async function unlockAudioIfNeeded() {
+      if (audioUnlocked) {
+        return;
+      }
+      const ctx = ensureAudioContext();
+      if (!ctx) {
+        return;
+      }
+      try {
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 0.0001;
+        oscillator.frequency.value = 440;
+        oscillator.type = 'sine';
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + 0.01);
+        audioUnlocked = true;
+      } catch (error) {
+        audioUnlocked = false;
+      }
+    }
+
+    function playTone({ freq, durationMs, type = 'sine', gain = 0.06, attackMs = 5, releaseMs = 30 }) {
+      if (config.soundMode !== 'on') {
+        return;
+      }
+      const ctx = ensureAudioContext();
+      if (!ctx || !audioUnlocked) {
+        return;
+      }
+      try {
+        const now = ctx.currentTime;
+        const duration = durationMs / 1000;
+        const attack = attackMs / 1000;
+        const release = releaseMs / 1000;
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(freq, now);
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(gain, now + Math.max(attack, 0.001));
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(duration - release, attack + 0.001));
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+      } catch (error) {
+        // Ignore audio errors to avoid blocking the quiz flow.
+      }
+    }
+
+    function playSound(kind) {
+      if (config.soundMode !== 'on') {
+        return;
+      }
+      if (kind === 'correct') {
+        playTone({ freq: 880, durationMs: 140, type: 'triangle', gain: 0.05 });
+        setTimeout(() => playTone({ freq: 1175, durationMs: 140, type: 'triangle', gain: 0.05 }), 90);
+        return;
+      }
+      if (kind === 'wrong') {
+        playTone({ freq: 220, durationMs: 220, type: 'sawtooth', gain: 0.045 });
+        return;
+      }
+      if (kind === 'timeout') {
+        playTone({ freq: 320, durationMs: 120, type: 'square', gain: 0.04 });
+        setTimeout(() => playTone({ freq: 280, durationMs: 120, type: 'square', gain: 0.04 }), 120);
+        return;
+      }
+      if (kind === 'result_high') {
+        playTone({ freq: 784, durationMs: 140, type: 'triangle', gain: 0.05 });
+        setTimeout(() => playTone({ freq: 988, durationMs: 140, type: 'triangle', gain: 0.05 }), 110);
+        setTimeout(() => playTone({ freq: 1319, durationMs: 220, type: 'triangle', gain: 0.05 }), 220);
+        return;
+      }
+      if (kind === 'result_mid') {
+        playTone({ freq: 659, durationMs: 120, type: 'triangle', gain: 0.045 });
+        setTimeout(() => playTone({ freq: 784, durationMs: 120, type: 'triangle', gain: 0.045 }), 110);
+        return;
+      }
+      playTone({ freq: 330, durationMs: 180, type: 'sine', gain: 0.04 });
     }
 
     function resumeTimerIfNeeded() {
@@ -412,6 +524,7 @@
       const timeMode = timeModeSelect.value;
       const timeLimit = Number(timeLimitInput.value);
       const hpMode = hpModeSelect.value;
+      const soundMode = soundModeSelect.value;
 
       const operationInputs = [opAddInput, opSubInput, opMulInput, opDivInput];
       const mulDivRangeInputs = [mulDivRange9Input, mulDivRange20Input];
@@ -421,6 +534,7 @@
       setInvalid(digitLengthSelect, false);
       setInvalid(timeLimitInput, false);
       setInvalid(hpModeSelect, false);
+      setInvalid(soundModeSelect, false);
 
       if (operationTypes.length === 0) {
         operationInputs.forEach((input) => setInvalid(input, true, input));
@@ -450,6 +564,10 @@
         setInvalid(hpModeSelect, true);
         return '血條模式設定不正確。';
       }
+      if (!['on', 'off'].includes(soundMode)) {
+        setInvalid(soundModeSelect, true);
+        return '音效設定不正確。';
+      }
 
       config = {
         operationTypes,
@@ -459,12 +577,14 @@
         timeMode,
         timeLimit: timeMode === 'limited' ? timeLimit : 0,
         hpMode,
-        maxHp: hpMode === 'off' ? 0 : Number(hpMode)
+        maxHp: hpMode === 'off' ? 0 : Number(hpMode),
+        soundMode
       };
       return null;
     }
 
-    function startQuiz() {
+    async function startQuiz() {
+      await unlockAudioIfNeeded();
       clearSetupError();
       const error = parseSetup();
       if (error) {
@@ -582,6 +702,7 @@
         q.userAnswer = null;
         q.timeout = true;
         q.elapsedSeconds = config.timeMode === 'limited' ? config.timeLimit : elapsed;
+        playSound('timeout');
         if (deductHpAndCheckEnd()) {
           return;
         }
@@ -606,6 +727,7 @@
         setInvalid(answerInput, false);
         q.userAnswer = parsedValue;
         q.elapsedSeconds = elapsed;
+        playSound(q.userAnswer === q.correct ? 'correct' : 'wrong');
         if (q.userAnswer !== q.correct && deductHpAndCheckEnd()) {
           return;
         }
@@ -726,6 +848,13 @@
         : '';
       scoreText.textContent = `${hpStatus}答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
       const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+      if (accuracy >= 80) {
+        playSound('result_high');
+      } else if (accuracy >= 40) {
+        playSound('result_mid');
+      } else {
+        playSound('result_low');
+      }
       const encourageLevel = accuracy === 100
         ? 100
         : accuracy >= 80
@@ -872,6 +1001,10 @@
     hpModeSelect.addEventListener('change', () => {
       clearSetupError();
       setInvalid(hpModeSelect, false);
+    });
+    soundModeSelect.addEventListener('change', () => {
+      clearSetupError();
+      setInvalid(soundModeSelect, false);
     });
   </script>
 </body>
