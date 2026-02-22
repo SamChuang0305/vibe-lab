@@ -236,6 +236,8 @@
     let endedByHpZero = false;
     let currentHp = 0;
     let gameOverModalOpenedAt = 0;
+    let quizStartedAtMs = null;
+    let quizEndedAtMs = null;
     let audioContext = null;
     let audioUnlocked = false;
     const SOUND_GAIN_MULTIPLIER = 1.6;
@@ -275,6 +277,38 @@
     function clearQuizError() {
       quizError.textContent = '';
       quizError.classList.add('hidden');
+    }
+
+    function pad2(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function formatUtcOffset(date) {
+      const offsetMinutes = -date.getTimezoneOffset();
+      const sign = offsetMinutes >= 0 ? '+' : '-';
+      const absMinutes = Math.abs(offsetMinutes);
+      const hours = Math.floor(absMinutes / 60);
+      const minutes = absMinutes % 60;
+      if (minutes === 0) {
+        return `UTC${sign}${hours}`;
+      }
+      return `UTC${sign}${hours}:${pad2(minutes)}`;
+    }
+
+    function formatLocalDateTimeWithTz(timestampMs) {
+      if (!Number.isFinite(timestampMs)) {
+        return '-';
+      }
+      const date = new Date(timestampMs);
+      const datePart = `${date.getFullYear()}/${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}`;
+      const timePart = `${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+      return `${datePart} ${timePart} (${formatUtcOffset(date)})`;
+    }
+
+    function recordQuizEndTimeIfNeeded() {
+      if (quizEndedAtMs === null) {
+        quizEndedAtMs = Date.now();
+      }
     }
 
     function ensureAudioContext() {
@@ -665,6 +699,8 @@
       endedEarly = false;
       endedByHpZero = false;
       currentHp = config.maxHp;
+      quizStartedAtMs = Date.now();
+      quizEndedAtMs = null;
       hideGameOverModal();
 
       setupPanel.classList.add('hidden');
@@ -717,6 +753,7 @@
 
     function showGameOverModal() {
       clearInterval(timerId);
+      recordQuizEndTimeIfNeeded();
       gameOverModalOpenedAt = Date.now();
       gameOverModal.classList.remove('hidden');
       gameOverModal.classList.add('flex');
@@ -806,6 +843,7 @@
 
       currentIndex += 1;
       if (currentIndex >= questions.length) {
+        recordQuizEndTimeIfNeeded();
         finishQuiz('normal');
       } else {
         renderQuestion();
@@ -834,6 +872,8 @@
         : '不適用';
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
       const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '關閉';
+      const startedAtLabel = formatLocalDateTimeWithTz(quizStartedAtMs);
+      const endedAtLabel = formatLocalDateTimeWithTz(quizEndedAtMs);
       configSummaryList.innerHTML = '';
       [
         `題目種類：${selectedOperations}`,
@@ -841,7 +881,9 @@
         `加、減法數字最大值：${addSubRangeLabel}`,
         `乘、除法出題範圍：${mulDivRangeLabel}`,
         `單題答題時間：${timeModeLabel}`,
-        `血條模式：${hpModeLabel}`
+        `血條模式：${hpModeLabel}`,
+        `開始作答時間：${startedAtLabel}`,
+        `結束作答時間：${endedAtLabel}`
       ].forEach((text) => {
         const li = document.createElement('li');
         li.textContent = text;
@@ -1007,6 +1049,7 @@
         }
       }
       clearInterval(timerId);
+      recordQuizEndTimeIfNeeded();
       finishQuiz('early_leave');
     });
     restartBtn.addEventListener('click', () => {
