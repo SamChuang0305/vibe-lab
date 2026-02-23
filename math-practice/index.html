@@ -20,7 +20,8 @@
       #quizPanel,
       #resultActions,
       #pdfError,
-      #pdfGuidePanel {
+      #pdfGuidePanel,
+      #mobilePdfFilenameHint {
         display: none !important;
       }
       #resultPanel {
@@ -213,6 +214,13 @@
           可將本次作答結果匯出為 PDF 檔案，以利下載留存作為成績紀錄，並供後續檢視與改善較弱題型。此功能採用瀏覽器列印機制，請於列印視窗將印表機選項設為「儲存成 PDF」後完成下載。
         </p>
       </section>
+      <section id="mobilePdfFilenameHint" class="mt-4 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+        <h3 class="text-base font-semibold text-amber-800">Android 檔名提示</h3>
+        <p class="mt-2 text-sm leading-relaxed text-amber-900">
+          Android 裝置可能由瀏覽器或系統列印服務決定檔名，未必能自動帶入時間戳。若需保留完整檔名，請在儲存時手動改為：
+        </p>
+        <p id="mobilePdfFilenameText" class="mt-2 break-all rounded bg-white px-2 py-1 text-sm font-semibold text-amber-900"></p>
+      </section>
 
       <p id="pdfError" class="mt-4 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
       <div id="resultActions" class="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -270,6 +278,8 @@
     const learningSuggestionPanel = document.getElementById('learningSuggestionPanel');
     const learningSuggestionEmpty = document.getElementById('learningSuggestionEmpty');
     const learningSuggestionList = document.getElementById('learningSuggestionList');
+    const mobilePdfFilenameHint = document.getElementById('mobilePdfFilenameHint');
+    const mobilePdfFilenameText = document.getElementById('mobilePdfFilenameText');
     const pdfError = document.getElementById('pdfError');
     const resultActions = document.getElementById('resultActions');
     const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -359,8 +369,27 @@
       return `數學計算練習-${formatFileTimestamp(timestampMs)}.pdf`;
     }
 
+    function getPdfTimestamp() {
+      return Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
+    }
+
+    function isAndroidDevice() {
+      return /Android/i.test(navigator.userAgent || '');
+    }
+
+    function renderMobilePdfFilenameHint() {
+      if (!isAndroidDevice()) {
+        mobilePdfFilenameHint.classList.add('hidden');
+        mobilePdfFilenameText.textContent = '';
+        return;
+      }
+      const filename = buildPdfFilename(getPdfTimestamp());
+      mobilePdfFilenameText.textContent = filename;
+      mobilePdfFilenameHint.classList.remove('hidden');
+    }
+
     function exportResultToPdfByPrint() {
-      const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
+      const timestamp = getPdfTimestamp();
       const originalTitle = document.title;
       document.title = buildPdfFilename(timestamp).replace(/\.pdf$/i, '');
       window.addEventListener('afterprint', () => {
@@ -1319,6 +1348,7 @@
         resultBody.appendChild(tr);
       });
       renderLearningSuggestions(questions);
+      renderMobilePdfFilenameHint();
 
       const hpStatus = config.maxHp > 0
         ? `剩餘血量 ${'❤️'.repeat(Math.max(0, Math.min(currentHp, config.maxHp)))}${'🖤'.repeat(config.maxHp - Math.max(0, Math.min(currentHp, config.maxHp)))}，`
@@ -1420,6 +1450,8 @@
       clearInterval(timerId);
       hideGameOverModal();
       clearPdfError();
+      mobilePdfFilenameHint.classList.add('hidden');
+      mobilePdfFilenameText.textContent = '';
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');
