@@ -198,6 +198,11 @@
           <tbody id="resultBody"></tbody>
         </table>
       </div>
+      <section id="learningSuggestionPanel" class="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+        <h3 class="text-base font-semibold text-amber-800">學習建議</h3>
+        <p id="learningSuggestionEmpty" class="mt-2 text-sm text-amber-700"></p>
+        <ul id="learningSuggestionList" class="mt-2 space-y-2 text-sm text-amber-900"></ul>
+      </section>
 
       <p id="pdfError" class="mt-4 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
       <div id="resultActions" class="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -252,6 +257,9 @@
     const earlyExitText = document.getElementById('earlyExitText');
     const hpZeroText = document.getElementById('hpZeroText');
     const resultBody = document.getElementById('resultBody');
+    const learningSuggestionPanel = document.getElementById('learningSuggestionPanel');
+    const learningSuggestionEmpty = document.getElementById('learningSuggestionEmpty');
+    const learningSuggestionList = document.getElementById('learningSuggestionList');
     const pdfError = document.getElementById('pdfError');
     const resultActions = document.getElementById('resultActions');
     const downloadPdfBtn = document.getElementById('downloadPdfBtn');
@@ -273,6 +281,13 @@
     let audioContext = null;
     let audioUnlocked = false;
     const SOUND_GAIN_MULTIPLIER = 1.6;
+    const LEARNING_SUGGESTION_RULES = {
+      minSamples: 3,
+      maxSuggestions: 3,
+      wrongRate: { high: 0.4, medium: 0.25 },
+      slowRate: { high: 0.4, medium: 0.25 },
+      slowThresholdSec: { add: 8, sub: 10, mul: 12, div: 14 }
+    };
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
       questionCount: 10,
@@ -538,6 +553,161 @@
         return { symbol: '✖️', label: '乘法 ✖️' };
       }
       return { symbol: '➗', label: '除法 ➗' };
+    }
+
+    function getDigitLengthLabel(digitLength) {
+      if (digitLength === 1) return '個位數（1~9）';
+      if (digitLength === 2) return '十位數（1~99）';
+      return '百位數（1~999）';
+    }
+
+    function getReducedDigitLength(currentDigitLength) {
+      return currentDigitLength > 1 ? currentDigitLength - 1 : 1;
+    }
+
+    function formatPercent(rate) {
+      return `${Math.round(rate * 100)}%`;
+    }
+
+    function createOperationStats() {
+      return {
+        add: { total: 0, wrong: 0, slowCorrect: 0, elapsedSum: 0 },
+        sub: { total: 0, wrong: 0, slowCorrect: 0, elapsedSum: 0 },
+        mul: { total: 0, wrong: 0, slowCorrect: 0, elapsedSum: 0 },
+        div: { total: 0, wrong: 0, slowCorrect: 0, elapsedSum: 0 }
+      };
+    }
+
+    function isQuestionWrong(question, isCorrect) {
+      return question.timeout || question.userAnswer === null || Number.isNaN(question.userAnswer) || !isCorrect;
+    }
+
+    function buildWrongFocusedSetupText(type) {
+      const opLabel = getOperationMeta(type).label;
+      if (type === 'add' || type === 'sub') {
+        const reducedDigitLength = getReducedDigitLength(config.digitLength);
+        return `建議關卡：只勾選 ${opLabel}，題目數 10~15 題，加減上限改為 ${getDigitLengthLabel(reducedDigitLength)}，單題答題時間改為無時間限制。`;
+      }
+      return `建議關卡：只勾選 ${opLabel}，乘除範圍先選 9x9（2x2 ~ 9x9），題目數 10~15 題，單題答題時間改為無時間限制。`;
+    }
+
+    function buildSpeedFocusedSetupText(type) {
+      const opLabel = getOperationMeta(type).label;
+      return `建議關卡：只勾選 ${opLabel}，題目數 10~15 題，單題答題時間改為限定秒數（8~12 秒）進行提速練習。`;
+    }
+
+    function buildBalancedSetupText(type) {
+      const opLabel = getOperationMeta(type).label;
+      return `建議關卡：只勾選 ${opLabel}，題目數 15~20 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
+    }
+
+    function buildLearningSuggestions(questionList) {
+      const statsByType = createOperationStats();
+      questionList.forEach((question) => {
+        const stat = statsByType[question.operationType];
+        if (!stat) {
+          return;
+        }
+        const elapsed = Number.isFinite(question.elapsedSeconds) ? question.elapsedSeconds : 0;
+        const isCorrect = question.userAnswer === question.correct;
+        const isWrong = isQuestionWrong(question, isCorrect);
+        stat.total += 1;
+        stat.elapsedSum += elapsed;
+        if (isWrong) {
+          stat.wrong += 1;
+          return;
+        }
+        const slowThreshold = LEARNING_SUGGESTION_RULES.slowThresholdSec[question.operationType] || 10;
+        if (elapsed > slowThreshold) {
+          stat.slowCorrect += 1;
+        }
+      });
+
+      const suggestions = [];
+      Object.entries(statsByType).forEach(([type, stat]) => {
+        if (stat.total < LEARNING_SUGGESTION_RULES.minSamples) {
+          return;
+        }
+        const wrongRate = stat.wrong / stat.total;
+        const slowRate = stat.slowCorrect / stat.total;
+        const avgSec = stat.elapsedSum / stat.total;
+        const observation = `${getOperationMeta(type).label}：錯誤率 ${formatPercent(wrongRate)}，答對但偏慢比例 ${formatPercent(slowRate)}，平均 ${avgSec.toFixed(1)} 秒。`;
+
+        if (wrongRate >= LEARNING_SUGGESTION_RULES.wrongRate.high && slowRate >= LEARNING_SUGGESTION_RULES.slowRate.high) {
+          suggestions.push({
+            priority: 4,
+            observation,
+            setup: `${buildWrongFocusedSetupText(type)} 第二階段再改為限定秒數（8~12 秒）提速。`,
+            goal: '目標：先把錯誤率降到 20% 以下，再把答對但偏慢比例降到 20% 以下。'
+          });
+          return;
+        }
+        if (wrongRate >= LEARNING_SUGGESTION_RULES.wrongRate.high) {
+          suggestions.push({
+            priority: 3,
+            observation,
+            setup: buildWrongFocusedSetupText(type),
+            goal: '目標：先把錯誤率降到 20% 以下，再恢復限時設定。'
+          });
+          return;
+        }
+        if (wrongRate >= LEARNING_SUGGESTION_RULES.wrongRate.medium) {
+          suggestions.push({
+            priority: 2,
+            observation,
+            setup: buildBalancedSetupText(type),
+            goal: '目標：把錯誤率降到 15% 以下，並維持穩定作答速度。'
+          });
+          return;
+        }
+        if (slowRate >= LEARNING_SUGGESTION_RULES.slowRate.high || slowRate >= LEARNING_SUGGESTION_RULES.slowRate.medium) {
+          suggestions.push({
+            priority: slowRate >= LEARNING_SUGGESTION_RULES.slowRate.high ? 2 : 1,
+            observation,
+            setup: buildSpeedFocusedSetupText(type),
+            goal: '目標：把答對但偏慢比例降到 20% 以下。'
+          });
+        }
+      });
+
+      return suggestions
+        .sort((a, b) => b.priority - a.priority)
+        .slice(0, LEARNING_SUGGESTION_RULES.maxSuggestions);
+    }
+
+    function renderLearningSuggestions(questionList) {
+      const suggestions = buildLearningSuggestions(questionList);
+      learningSuggestionList.innerHTML = '';
+      learningSuggestionPanel.classList.remove('hidden');
+      if (suggestions.length === 0) {
+        learningSuggestionEmpty.textContent = '目前各題型表現穩定，建議維持現有設定，或增加題目數量 5~10 題持續練習。';
+        learningSuggestionList.classList.add('hidden');
+        return;
+      }
+
+      learningSuggestionEmpty.textContent = '';
+      learningSuggestionList.classList.remove('hidden');
+      suggestions.forEach((suggestion) => {
+        const item = document.createElement('li');
+        item.className = 'rounded border border-amber-200 bg-white px-3 py-2';
+
+        const observation = document.createElement('p');
+        observation.className = 'font-medium';
+        observation.textContent = `觀察：${suggestion.observation}`;
+
+        const setup = document.createElement('p');
+        setup.className = 'mt-1';
+        setup.textContent = suggestion.setup;
+
+        const goal = document.createElement('p');
+        goal.className = 'mt-1 text-amber-800';
+        goal.textContent = suggestion.goal;
+
+        item.appendChild(observation);
+        item.appendChild(setup);
+        item.appendChild(goal);
+        learningSuggestionList.appendChild(item);
+      });
     }
 
     function getAddSubMaxValue(digitLength) {
@@ -1047,6 +1217,7 @@
         tr.appendChild(elapsedTd);
         resultBody.appendChild(tr);
       });
+      renderLearningSuggestions(questions);
 
       const hpStatus = config.maxHp > 0
         ? `剩餘血量 ${'❤️'.repeat(Math.max(0, Math.min(currentHp, config.maxHp)))}${'🖤'.repeat(config.maxHp - Math.max(0, Math.min(currentHp, config.maxHp)))}，`
