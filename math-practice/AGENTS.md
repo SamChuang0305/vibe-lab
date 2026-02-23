@@ -34,6 +34,7 @@
 ## Commit & Pull Request Guidelines
 - Commit 訊息遵循既有慣例：`feat: ...`、`fix: ...`、`chore: ...`。
 - 建議格式：`type: 簡短動作 + 影響範圍`（可含中括號標示功能區，如 `[下載 PDF]`）。
+- 流程規則：只要該次有任何程式或規格修改，需在該次變更中同步檢查並更新 `index.html`、`README.md`、`docs/adr/`（若有架構決策變更）與 `AGENTS.md`（若有流程規範變更），完成後執行 `git commit`。
 - PR 需包含：
   - 變更摘要與動機
   - 受影響檔案清單
