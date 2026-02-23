@@ -214,8 +214,6 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script>
     const setupPanel = document.getElementById('setupPanel');
     const quizPanel = document.getElementById('quizPanel');
@@ -274,7 +272,6 @@
     let quizEndedAtMs = null;
     let audioContext = null;
     let audioUnlocked = false;
-    let isExportingPdf = false;
     const SOUND_GAIN_MULTIPLIER = 1.6;
     let config = {
       operationTypes: ['add', 'sub', 'mul', 'div'],
@@ -337,18 +334,6 @@
       return `數學計算練習-${formatFileTimestamp(timestampMs)}.pdf`;
     }
 
-    function isFirefoxBrowser() {
-      return /firefox/i.test(window.navigator.userAgent || '');
-    }
-
-    function setPdfExportLoading(isLoading) {
-      isExportingPdf = isLoading;
-      downloadPdfBtn.disabled = isLoading;
-      downloadPdfBtn.textContent = isLoading ? 'PDF 產生中...' : '下載 PDF';
-      downloadPdfBtn.classList.toggle('opacity-60', isLoading);
-      downloadPdfBtn.classList.toggle('cursor-not-allowed', isLoading);
-    }
-
     function exportResultToPdfByPrint() {
       const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
       const originalTitle = document.title;
@@ -359,112 +344,13 @@
       window.print();
     }
 
-    async function captureResultPanelToCanvas() {
-      const wasActionsHidden = resultActions.classList.contains('hidden');
-      resultActions.classList.add('hidden');
-      const originalOverflow = resultPanel.style.overflow;
-      resultPanel.style.overflow = 'visible';
-      try {
-        await new Promise((resolve) => window.requestAnimationFrame(resolve));
-        const isFirefox = isFirefoxBrowser();
-        const scale = isFirefox ? 1 : Math.min(2, Math.max(1, window.devicePixelRatio || 1));
-        return await window.html2canvas(resultPanel, {
-          backgroundColor: '#ffffff',
-          scale,
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: document.documentElement.clientWidth,
-          windowHeight: Math.max(document.documentElement.clientHeight, resultPanel.scrollHeight)
-        });
-      } finally {
-        resultPanel.style.overflow = originalOverflow;
-        if (!wasActionsHidden) {
-          resultActions.classList.remove('hidden');
-        }
-      }
-    }
-
-    async function exportResultToPdf() {
-      if (isExportingPdf) {
-        return;
-      }
+    function exportResultToPdf() {
       clearPdfError();
       if (resultPanel.classList.contains('hidden')) {
         showPdfError('請先完成作答並進入結果頁，再下載 PDF。');
         return;
       }
-      if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
-        showPdfError('PDF 匯出套件載入失敗，請重新整理後再試。');
-        return;
-      }
-      if (isFirefoxBrowser()) {
-        exportResultToPdfByPrint();
-        return;
-      }
-
-      setPdfExportLoading(true);
-      try {
-        const canvas = await captureResultPanelToCanvas();
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-          orientation: 'p',
-          unit: 'mm',
-          format: 'a4',
-          compress: true
-        });
-        const margin = 10;
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const contentWidth = pageWidth - margin * 2;
-        const contentHeight = pageHeight - margin * 2;
-        const pagePixelHeight = Math.max(1, Math.floor((contentHeight * canvas.width) / contentWidth));
-        const imageFormat = 'PNG';
-        const imageCompression = 'FAST';
-
-        let pageIndex = 0;
-        for (let offsetY = 0; offsetY < canvas.height; offsetY += pagePixelHeight) {
-          const sliceHeight = Math.min(pagePixelHeight, canvas.height - offsetY);
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sliceHeight;
-          const pageCtx = pageCanvas.getContext('2d');
-          if (!pageCtx) {
-            throw new Error('無法建立 PDF 分頁畫布');
-          }
-          pageCtx.fillStyle = '#ffffff';
-          pageCtx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          pageCtx.drawImage(
-            canvas,
-            0,
-            offsetY,
-            canvas.width,
-            sliceHeight,
-            0,
-            0,
-            canvas.width,
-            sliceHeight
-          );
-          const renderedHeight = (sliceHeight * contentWidth) / canvas.width;
-          const pageImageSource = pageCanvas.toDataURL('image/png');
-
-          if (pageIndex > 0) {
-            pdf.addPage();
-          }
-          pdf.setFillColor(255, 255, 255);
-          pdf.rect(0, 0, pageWidth, pageHeight, 'F');
-          pdf.addImage(pageImageSource, imageFormat, margin, margin, contentWidth, renderedHeight, undefined, imageCompression);
-          pageIndex += 1;
-        }
-
-        const timestamp = Number.isFinite(quizEndedAtMs) ? quizEndedAtMs : Date.now();
-        pdf.save(buildPdfFilename(timestamp));
-      } catch (error) {
-        showPdfError('PDF 匯出失敗，請稍後再試。');
-      } finally {
-        setPdfExportLoading(false);
-      }
+      exportResultToPdfByPrint();
     }
 
     function formatUtcOffset(date) {
@@ -1060,7 +946,6 @@
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
       clearPdfError();
-      setPdfExportLoading(false);
       endedEarly = endReason === 'early_leave';
       endedByHpZero = endReason === 'hp_zero';
       earlyExitText.classList.toggle('hidden', !endedEarly);
@@ -1263,7 +1148,6 @@
       clearInterval(timerId);
       hideGameOverModal();
       clearPdfError();
-      setPdfExportLoading(false);
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');

@@ -1,8 +1,2 @@
 tailwindcss
 https://cdn.tailwindcss.com/3.4.17
-
-html2canvas
-https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js
-
-jsPDF
-https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js
