@@ -32,7 +32,16 @@
 - 若變更規則邏輯，請在 PR 描述提供「前/後行為」與至少 1 組範例。
 
 ## Commit & Pull Request Guidelines
-- Commit 訊息遵循既有慣例：`feat: ...`、`fix: ...`、`chore: ...`。
+- Commit type 僅允許以下類別：
+  - `feat`: 新增/修改功能（feature）
+  - `fix`: 修補 bug（bug fix）
+  - `docs`: 文件（documentation）
+  - `style`: 格式（不影響程式碼運行，如 white-space、formatting）
+  - `refactor`: 重構（非新增功能、非修 bug）
+  - `perf`: 改善效能
+  - `test`: 增加測試
+  - `chore`: 建構程序或輔助工具變動（maintain）
+  - `revert`: 撤銷先前 commit（例如 `revert: type(scope): subject`）
 - 建議格式：`type: 簡短動作 + 影響範圍`（可含中括號標示功能區，如 `[下載 PDF]`）。
 - 流程規則：只要該次有任何程式或規格修改，需在該次變更中同步檢查並更新 `index.html`、`README.md`、`docs/adr/`（若有架構決策變更）與 `AGENTS.md`（若有流程規範變更），完成後執行 `git commit`。
 - PR 需包含：
