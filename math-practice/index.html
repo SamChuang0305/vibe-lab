@@ -153,7 +153,7 @@
     <section id="quizPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <div class="mb-3 flex items-center justify-between text-sm text-slate-600">
         <p id="progressText">第 1 / 10 題</p>
-        <p id="hpText" class="hidden whitespace-nowrap text-sm font-semibold tracking-wider text-rose-600"></p>
+        <p id="hpText" class="whitespace-nowrap text-sm font-semibold tracking-wider text-rose-600"></p>
         <p id="timerText">剩餘時間：10 秒</p>
       </div>
 
@@ -970,8 +970,8 @@
 
     function renderHp() {
       if (config.maxHp <= 0) {
-        hpText.textContent = '';
-        hpText.classList.add('hidden');
+        hpText.textContent = '🛡 無敵';
+        hpText.classList.remove('hidden');
         return;
       }
       const safeHp = Math.max(0, Math.min(currentHp, config.maxHp));
