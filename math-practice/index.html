@@ -601,6 +601,84 @@
       return `建議關卡：只勾選 ${opLabel}，題目數 15~20 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
     }
 
+    function buildLearningSuggestionPreset(type, strategy) {
+      const reducedDigitLength = getReducedDigitLength(config.digitLength);
+      const isAddSub = type === 'add' || type === 'sub';
+      const isMulDiv = type === 'mul' || type === 'div';
+      const currentMulDivRanges = config.mulDivRanges.length > 0 ? [...config.mulDivRanges] : ['9'];
+      if (strategy === 'wrong_high') {
+        return {
+          operationType: type,
+          questionCount: 12,
+          digitLength: isAddSub ? reducedDigitLength : config.digitLength,
+          mulDivRanges: isMulDiv ? ['9'] : ['9'],
+          timeMode: 'unlimited',
+          timeLimit: 10
+        };
+      }
+      if (strategy === 'balanced') {
+        return {
+          operationType: type,
+          questionCount: 18,
+          digitLength: config.digitLength,
+          mulDivRanges: isMulDiv ? currentMulDivRanges : ['9'],
+          timeMode: 'limited',
+          timeLimit: 15
+        };
+      }
+      return {
+        operationType: type,
+        questionCount: 12,
+        digitLength: config.digitLength,
+        mulDivRanges: isMulDiv ? currentMulDivRanges : ['9'],
+        timeMode: 'limited',
+        timeLimit: 10
+      };
+    }
+
+    function applyLearningSuggestionPreset(preset) {
+      if (!preset) {
+        return;
+      }
+      hideGameOverModal();
+      clearSetupError();
+      setInvalid(questionCountInput, false);
+      setInvalid(digitLengthSelect, false);
+      setInvalid(timeLimitInput, false);
+      setInvalid(hpModeSelect, false);
+      setInvalid(soundModeSelect, false);
+
+      const targetType = preset.operationType;
+      opAddInput.checked = targetType === 'add';
+      opSubInput.checked = targetType === 'sub';
+      opMulInput.checked = targetType === 'mul';
+      opDivInput.checked = targetType === 'div';
+      [opAddInput, opSubInput, opMulInput, opDivInput].forEach((input) => {
+        setInvalid(input, false, input);
+      });
+
+      questionCountInput.value = String(preset.questionCount);
+      digitLengthSelect.value = String(preset.digitLength);
+      mulDivRange9Input.checked = Array.isArray(preset.mulDivRanges) && preset.mulDivRanges.includes('9');
+      mulDivRange20Input.checked = Array.isArray(preset.mulDivRanges) && preset.mulDivRanges.includes('20');
+      [mulDivRange9Input, mulDivRange20Input].forEach((input) => {
+        setInvalid(input, false, input.parentElement.parentElement);
+      });
+
+      timeModeSelect.value = preset.timeMode;
+      const isLimited = preset.timeMode === 'limited';
+      secondsWrap.classList.toggle('hidden', !isLimited);
+      if (isLimited) {
+        timeLimitInput.value = String(preset.timeLimit);
+      }
+
+      resultPanel.classList.add('hidden');
+      quizPanel.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      startBtn.focus();
+    }
+
     function buildLearningSuggestions(questionList) {
       const statsByType = createOperationStats();
       questionList.forEach((question) => {
@@ -638,7 +716,8 @@
             priority: 4,
             observation,
             setup: `${buildWrongFocusedSetupText(type)} 第二階段再改為限定秒數（8~12 秒）提速。`,
-            goal: '目標：先把錯誤率降到 20% 以下，再把答對但偏慢比例降到 20% 以下。'
+            goal: '目標：先把錯誤率降到 20% 以下，再把答對但偏慢比例降到 20% 以下。',
+            preset: buildLearningSuggestionPreset(type, 'wrong_high')
           });
           return;
         }
@@ -647,7 +726,8 @@
             priority: 3,
             observation,
             setup: buildWrongFocusedSetupText(type),
-            goal: '目標：先把錯誤率降到 20% 以下，再恢復限時設定。'
+            goal: '目標：先把錯誤率降到 20% 以下，再恢復限時設定。',
+            preset: buildLearningSuggestionPreset(type, 'wrong_high')
           });
           return;
         }
@@ -656,7 +736,8 @@
             priority: 2,
             observation,
             setup: buildBalancedSetupText(type),
-            goal: '目標：把錯誤率降到 15% 以下，並維持穩定作答速度。'
+            goal: '目標：把錯誤率降到 15% 以下，並維持穩定作答速度。',
+            preset: buildLearningSuggestionPreset(type, 'balanced')
           });
           return;
         }
@@ -665,7 +746,8 @@
             priority: slowRate >= LEARNING_SUGGESTION_RULES.slowRate.high ? 2 : 1,
             observation,
             setup: buildSpeedFocusedSetupText(type),
-            goal: '目標：把答對但偏慢比例降到 20% 以下。'
+            goal: '目標：把答對但偏慢比例降到 20% 以下。',
+            preset: buildLearningSuggestionPreset(type, 'speed')
           });
         }
       });
@@ -703,9 +785,18 @@
         goal.className = 'mt-1 text-amber-800';
         goal.textContent = suggestion.goal;
 
+        const applyBtn = document.createElement('button');
+        applyBtn.type = 'button';
+        applyBtn.className = 'mt-2 rounded bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300';
+        applyBtn.textContent = '套用此建議關卡';
+        applyBtn.addEventListener('click', () => {
+          applyLearningSuggestionPreset(suggestion.preset);
+        });
+
         item.appendChild(observation);
         item.appendChild(setup);
         item.appendChild(goal);
+        item.appendChild(applyBtn);
         learningSuggestionList.appendChild(item);
       });
     }
