@@ -103,9 +103,9 @@
         </label>
 
         <label class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">血條模式（預設：關閉）</span>
+          <span class="text-sm font-medium">血條設定（預設：🛡 無敵）</span>
           <select id="hpMode" class="rounded border border-slate-300 px-3 py-2">
-            <option value="off" selected>關閉</option>
+            <option value="off" selected>🛡 無敵</option>
             <option value="1">❤️</option>
             <option value="2">❤️❤️</option>
             <option value="3">❤️❤️❤️</option>
@@ -136,7 +136,7 @@
           <li>若題目種類為減法或除法，題目中的 a、b 兩個數字不會相同。</li>
           <li>題目計算結果不會小於 0、只會有整數。</li>
           <li>題目不會重複出現。</li>
-          <li>啟用血條模式時，當答錯或超時會扣血，若血量歸零則直接結束。</li>
+          <li>設定血條後，當答錯或超時會扣血，若血量歸零則直接結束。</li>
         </ul>
       </div>
 
@@ -849,7 +849,7 @@
       }
       if (!['off', '1', '2', '3', '4', '5'].includes(hpMode)) {
         setInvalid(hpModeSelect, true);
-        return '血條模式設定不正確。';
+        return '血條設定不正確。';
       }
       if (!['on', 'off'].includes(soundMode)) {
         setInvalid(soundModeSelect, true);
@@ -1078,7 +1078,7 @@
           .join('、')
         : '不適用';
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
-      const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '關閉';
+      const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '🛡 無敵';
       const startedAtLabel = formatLocalDateTimeWithTz(quizStartedAtMs);
       const endedAtLabel = formatLocalDateTimeWithTz(quizEndedAtMs);
       configSummaryList.innerHTML = '';
@@ -1088,7 +1088,7 @@
         `加、減法數字最大值：${addSubRangeLabel}`,
         `乘、除法出題範圍：${mulDivRangeLabel}`,
         `單題答題時間：${timeModeLabel}`,
-        `血條模式：${hpModeLabel}`,
+        `血條設定：${hpModeLabel}`,
         `開始作答時間：${startedAtLabel}`,
         `結束作答時間：${endedAtLabel}`
       ].forEach((text) => {
