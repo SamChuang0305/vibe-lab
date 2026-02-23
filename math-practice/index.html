@@ -625,19 +625,19 @@
       const opLabel = getOperationMeta(type).label;
       if (type === 'add' || type === 'sub') {
         const reducedDigitLength = getReducedDigitLength(config.digitLength);
-        return `建議關卡：只勾選 ${opLabel}，題目數 10~15 題，加減上限改為 ${getDigitLengthLabel(reducedDigitLength)}，單題答題時間改為無時間限制。`;
+        return `建議關卡設定：只勾選 ${opLabel}，題目數 10~15 題，加減上限改為 ${getDigitLengthLabel(reducedDigitLength)}，單題答題時間改為無時間限制。`;
       }
-      return `建議關卡：只勾選 ${opLabel}，乘除範圍先選 9x9（2x2 ~ 9x9），題目數 10~15 題，單題答題時間改為無時間限制。`;
+      return `建議關卡設定：只勾選 ${opLabel}，乘除範圍先選 9x9（2x2 ~ 9x9），題目數 10~15 題，單題答題時間改為無時間限制。`;
     }
 
     function buildSpeedFocusedSetupText(type) {
       const opLabel = getOperationMeta(type).label;
-      return `建議關卡：只勾選 ${opLabel}，題目數 10~15 題，單題答題時間改為限定秒數（8~12 秒）進行提速練習。`;
+      return `建議關卡設定：只勾選 ${opLabel}，題目數 10~15 題，單題答題時間改為限定秒數（8~12 秒）進行提速練習。`;
     }
 
     function buildBalancedSetupText(type) {
       const opLabel = getOperationMeta(type).label;
-      return `建議關卡：只勾選 ${opLabel}，題目數 15~20 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
+      return `建議關卡設定：只勾選 ${opLabel}，題目數 15~20 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
     }
 
     function buildLearningSuggestionPreset(type, strategy) {
@@ -814,7 +814,7 @@
 
         const observation = document.createElement('p');
         observation.className = 'font-medium';
-        observation.textContent = `觀察：${suggestion.observation}`;
+        observation.textContent = `【觀察】${suggestion.observation}`;
 
         const setup = document.createElement('p');
         setup.className = 'mt-1';
@@ -827,7 +827,7 @@
         const applyBtn = document.createElement('button');
         applyBtn.type = 'button';
         applyBtn.className = 'learning-suggestion-apply-btn mt-2 rounded bg-amber-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300';
-        applyBtn.textContent = '套用此建議關卡';
+        applyBtn.textContent = '套用此建議關卡設定';
         applyBtn.addEventListener('click', () => {
           applyLearningSuggestionPreset(suggestion.preset);
         });
