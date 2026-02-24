@@ -15,6 +15,16 @@
   - `python3 -m http.server 8000`
   - 開啟 `http://localhost:8000`
 
+## SEO 與收錄
+- 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
+- 本 repo 維護子專案 sitemap：`https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
+- 主網域 `robots.txt` 由主站（Hexo）維護，建議在 `https://sam.webspace.tw/robots.txt` 宣告：
+  - `https://sam.webspace.tw/sitemap.xml`
+  - `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
+- 子專案收錄檢查建議：
+  1. 到 Google Search Console 提交 `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
+  2. 以 URL 檢查工具測試 `https://sam.webspace.tw/vibe-lab/math-practice/` 是否可建立索引
+
 ## 使用流程
 1. 在設定頁選擇題目種類、題目數量與其他關卡條件。
 2. 點擊 `開始練習` 進入作答頁。

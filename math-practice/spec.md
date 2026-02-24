@@ -6,6 +6,23 @@
 - JavaScript
 - Tailwind CSS
 
+## SEO 規格
+
+- 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
+- 首頁 `head` 必須提供以下 SEO 標記：
+  - `meta description`
+  - `meta robots`（`index,follow,max-image-preview:large`）
+  - `link rel="canonical"`
+  - Open Graph：`og:title`、`og:description`、`og:type`、`og:url`、`og:locale`
+  - Twitter：`twitter:card`、`twitter:title`、`twitter:description`
+  - JSON-LD（`WebApplication`）至少包含：`name`、`description`、`url`、`applicationCategory`、`operatingSystem`、`inLanguage`、`offers`
+- 子專案需維護 `sitemap.xml`，路徑為：
+  - `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
+- 跨 repo 協作原則：
+  - 主站 Hexo 的 `sitemap.xml` 由 Hexo 自動產生，不手動修改，避免部署覆蓋。
+  - 由主網域根目錄 `robots.txt`（`https://sam.webspace.tw/robots.txt`）宣告主站與子專案兩份 sitemap。
+  - 子路徑的 `robots.txt` 不作為主要收錄入口。
+
 ## 功能概述
 
 - 隨機產生數學計算題目。
