@@ -200,7 +200,7 @@
             積分規則：
             <ul class="mt-1 list-disc space-y-1 pl-5">
               <li>每答對一題可得 <code>100</code> 積分。</li>
-              <li>每連續答對 <code>5</code> 題，加送 <code>250</code> 積分，並將連續答對數量歸 <code>0</code> 重新計算。</li>
+              <li>每連續答對每滿 <code>5</code> 題，加送 <code>250</code> 積分（可持續累積）。</li>
               <li>答錯或超時不扣分，但連續答對數量歸 <code>0</code> 重新計算。</li>
             </ul>
           </li>
@@ -1443,9 +1443,8 @@
         if (isCorrect) {
           currentScore += 100;
           correctStreak += 1;
-          if (correctStreak >= 5) {
+          if (correctStreak % 5 === 0) {
             currentScore += 250;
-            correctStreak = 0;
           }
         } else {
           correctStreak = 0;
