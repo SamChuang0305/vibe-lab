@@ -101,11 +101,6 @@
         </fieldset>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">題目數量（1~200）</span>
-          <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
-        </label>
-
-        <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">加、減法數字最大值</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
             <option value="1">個位數（1~9）</option>
@@ -141,7 +136,12 @@
           <input id="timeLimit" type="number" min="1" max="60" value="10" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
-        <label class="flex flex-col gap-1 sm:col-span-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">題目數量（1~200）</span>
+          <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
+        </label>
+
+        <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">血條設定（預設：🛡 無敵）</span>
           <select id="hpMode" class="rounded border border-slate-300 px-3 py-2">
             <option value="off" selected>🛡 無敵</option>
@@ -153,17 +153,17 @@
           </select>
         </label>
 
-        <label class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">音效（預設：開啟）</span>
-          <select id="soundMode" class="rounded border border-slate-300 px-3 py-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">積分顯示（預設：開啟）</span>
+          <select id="scoreMode" class="rounded border border-slate-300 px-3 py-2">
             <option value="on" selected>開啟</option>
             <option value="off">關閉</option>
           </select>
         </label>
 
-        <label class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">積分顯示（預設：開啟）</span>
-          <select id="scoreMode" class="rounded border border-slate-300 px-3 py-2">
+        <label class="flex flex-col gap-1">
+          <span class="text-sm font-medium">音效（預設：開啟）</span>
+          <select id="soundMode" class="rounded border border-slate-300 px-3 py-2">
             <option value="on" selected>開啟</option>
             <option value="off">關閉</option>
           </select>
