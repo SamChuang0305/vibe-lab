@@ -126,6 +126,14 @@
             <option value="off">關閉</option>
           </select>
         </label>
+
+        <label class="flex flex-col gap-1 sm:col-span-2">
+          <span class="text-sm font-medium">積分顯示（預設：開啟）</span>
+          <select id="scoreMode" class="rounded border border-slate-300 px-3 py-2">
+            <option value="on" selected>開啟</option>
+            <option value="off">關閉</option>
+          </select>
+        </label>
       </div>
 
       <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
@@ -162,9 +170,12 @@
         <p id="timerText">剩餘時間：10 秒</p>
       </div>
 
-      <div class="mb-4 flex items-center justify-between gap-3">
+      <div class="mb-4 flex items-start justify-between gap-3">
         <p id="questionText" class="text-3xl font-bold">1 ➕ 2 = ?</p>
-        <button id="soundToggleBtn" type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center text-3xl leading-none text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="音效已開啟，點擊關閉">🔊</button>
+        <div class="flex shrink-0 flex-col items-end">
+          <button id="soundToggleBtn" type="button" class="inline-flex h-8 w-8 items-center justify-center text-3xl leading-none text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-300" aria-label="音效已開啟，點擊關閉">🔊</button>
+          <p id="currentScoreText" class="mt-1 text-sm text-slate-600">目前積分 0</p>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
@@ -178,6 +189,7 @@
 
     <section id="resultPanel" class="hidden rounded-lg bg-white p-6 shadow">
       <h2 class="mb-4 text-lg font-semibold">作答結果</h2>
+      <p id="totalScoreText" class="mb-1 text-base font-medium"></p>
       <p id="scoreText" class="mb-4 text-base font-medium"></p>
       <p id="encourageText" class="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-lg font-semibold text-emerald-800"></p>
       <div class="mb-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
@@ -250,6 +262,7 @@
     const timeLimitInput = document.getElementById('timeLimit');
     const hpModeSelect = document.getElementById('hpMode');
     const soundModeSelect = document.getElementById('soundMode');
+    const scoreModeSelect = document.getElementById('scoreMode');
     const mulDivRange9Input = document.getElementById('mulDivRange9');
     const mulDivRange20Input = document.getElementById('mulDivRange20');
     const secondsWrap = document.getElementById('secondsWrap');
@@ -262,6 +275,7 @@
     const startBtn = document.getElementById('startBtn');
     const progressText = document.getElementById('progressText');
     const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const currentScoreText = document.getElementById('currentScoreText');
     const timerText = document.getElementById('timerText');
     const questionText = document.getElementById('questionText');
     const answerInput = document.getElementById('answerInput');
@@ -271,6 +285,7 @@
     const hpText = document.getElementById('hpText');
     const quizError = document.getElementById('quizError');
 
+    const totalScoreText = document.getElementById('totalScoreText');
     const scoreText = document.getElementById('scoreText');
     const encourageText = document.getElementById('encourageText');
     const configSummaryList = document.getElementById('configSummaryList');
@@ -302,6 +317,8 @@
     let copyStatusTimerId = null;
     let quizStartedAtMs = null;
     let quizEndedAtMs = null;
+    let currentScore = 0;
+    let correctStreak = 0;
     let audioContext = null;
     let audioUnlocked = false;
     const SOUND_GAIN_MULTIPLIER = 1.6;
@@ -321,7 +338,8 @@
       timeLimit: 10,
       hpMode: 'off',
       maxHp: 0,
-      soundMode: 'on'
+      soundMode: 'on',
+      scoreMode: 'on'
     };
 
     function setInvalid(input, isInvalid, borderTarget = input) {
@@ -636,6 +654,25 @@
       } catch (error) {
         answerInput.focus();
       }
+    }
+
+    function renderCurrentScore() {
+      if (config.scoreMode !== 'on') {
+        currentScoreText.classList.add('hidden');
+        return;
+      }
+      currentScoreText.textContent = `目前積分 ${currentScore}`;
+      currentScoreText.classList.remove('hidden');
+    }
+
+    function renderTotalScore() {
+      if (config.scoreMode !== 'on') {
+        totalScoreText.classList.add('hidden');
+        totalScoreText.textContent = '';
+        return;
+      }
+      totalScoreText.textContent = `總得分 ${currentScore}`;
+      totalScoreText.classList.remove('hidden');
     }
 
     function resumeTimerIfNeeded() {
@@ -1074,6 +1111,7 @@
       const timeLimit = Number(timeLimitInput.value);
       const hpMode = hpModeSelect.value;
       const soundMode = soundModeSelect.value;
+      const scoreMode = scoreModeSelect.value;
 
       const operationInputs = [opAddInput, opSubInput, opMulInput, opDivInput];
       const mulDivRangeInputs = [mulDivRange9Input, mulDivRange20Input];
@@ -1084,6 +1122,7 @@
       setInvalid(timeLimitInput, false);
       setInvalid(hpModeSelect, false);
       setInvalid(soundModeSelect, false);
+      setInvalid(scoreModeSelect, false);
 
       if (operationTypes.length === 0) {
         operationInputs.forEach((input) => setInvalid(input, true, input));
@@ -1117,6 +1156,10 @@
         setInvalid(soundModeSelect, true);
         return '音效設定不正確。';
       }
+      if (!['on', 'off'].includes(scoreMode)) {
+        setInvalid(scoreModeSelect, true);
+        return '積分顯示設定不正確。';
+      }
 
       config = {
         operationTypes,
@@ -1127,7 +1170,8 @@
         timeLimit: timeMode === 'limited' ? timeLimit : 0,
         hpMode,
         maxHp: hpMode === 'off' ? 0 : Number(hpMode),
-        soundMode
+        soundMode,
+        scoreMode
       };
       return null;
     }
@@ -1165,6 +1209,8 @@
       endedEarly = false;
       endedByHpZero = false;
       currentHp = config.maxHp;
+      currentScore = 0;
+      correctStreak = 0;
       quizStartedAtMs = Date.now();
       quizEndedAtMs = null;
       hideGameOverModal();
@@ -1188,6 +1234,7 @@
       clearQuizError();
       setInvalid(answerInput, false);
       renderHp();
+      renderCurrentScore();
       answerInput.focus();
 
       if (config.timeMode === 'limited') {
@@ -1271,6 +1318,7 @@
         q.userAnswer = null;
         q.timeout = true;
         q.elapsedSeconds = config.timeMode === 'limited' ? config.timeLimit : elapsed;
+        correctStreak = 0;
         if (!willGameOver) {
           playSound('timeout');
         }
@@ -1300,6 +1348,16 @@
         q.elapsedSeconds = elapsed;
         const isCorrect = q.userAnswer === q.correct;
         const willGameOver = !isCorrect && willHpReachZeroAfterDeduct();
+        if (isCorrect) {
+          currentScore += 100;
+          correctStreak += 1;
+          if (correctStreak >= 5) {
+            currentScore += 250;
+            correctStreak = 0;
+          }
+        } else {
+          correctStreak = 0;
+        }
         if (!willGameOver) {
           playSound(isCorrect ? 'correct' : 'wrong');
         }
@@ -1340,6 +1398,7 @@
         : '不適用';
       const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
       const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '🛡 無敵';
+      const scoreModeLabel = config.scoreMode === 'on' ? '開啟' : '關閉';
       const startedAtLabel = formatLocalDateTimeWithTz(quizStartedAtMs);
       const endedAtLabel = formatLocalDateTimeWithTz(quizEndedAtMs);
       configSummaryList.innerHTML = '';
@@ -1350,6 +1409,7 @@
         `乘、除法出題範圍：${mulDivRangeLabel}`,
         `單題答題時間：${timeModeLabel}`,
         `血條設定：${hpModeLabel}`,
+        `積分顯示：${scoreModeLabel}`,
         `開始作答時間：${startedAtLabel}`,
         `結束作答時間：${endedAtLabel}`
       ].forEach((text) => {
@@ -1425,6 +1485,7 @@
       });
       renderLearningSuggestions(questions);
       renderMobilePdfFilenameHint();
+      renderTotalScore();
 
       const hpStatus = config.maxHp > 0
         ? `剩餘血量 ${'❤️'.repeat(Math.max(0, Math.min(currentHp, config.maxHp)))}${'🖤'.repeat(config.maxHp - Math.max(0, Math.min(currentHp, config.maxHp)))}，`
@@ -1599,7 +1660,13 @@
       config.soundMode = soundModeSelect.value;
       renderSoundToggle();
     });
+    scoreModeSelect.addEventListener('change', () => {
+      clearSetupError();
+      setInvalid(scoreModeSelect, false);
+      config.scoreMode = scoreModeSelect.value;
+    });
     renderSoundToggle();
+    renderCurrentScore();
   </script>
 </body>
 </html>
