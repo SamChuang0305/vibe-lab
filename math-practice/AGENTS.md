@@ -7,6 +7,7 @@
 - `docs/adr/`: 架構決策紀錄（ADR），重大設計變更請新增一份檔案。
 - `js/tailwindcss/3.4.17.js`: 本地 Tailwind 腳本備援；目前主要透過 CDN 載入。
 - `js/URL.txt`: 外部資源參考。
+- 使用裝置範圍：電腦、手機、平板；行動裝置包含 Android 與 iOS。
 
 ## Build, Test, and Development Commands
 - 本專案無打包流程，直接以瀏覽器開啟 `index.html` 即可執行。
