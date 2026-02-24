@@ -101,10 +101,10 @@
         </fieldset>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">加、減法數字最大值</span>
+          <span class="text-sm font-medium">加、減法出題數字（預設：十位數 1~99）</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
             <option value="1">個位數（1~9）</option>
-            <option value="2">十位數（1~99）</option>
+            <option value="2" selected>十位數（1~99）</option>
             <option value="3">百位數（1~999）</option>
           </select>
         </label>
@@ -124,53 +124,56 @@
         </fieldset>
 
         <label class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">單題答題時間</span>
+          <span class="text-sm font-medium">答題時間限制（預設：⏰ 限定每題秒數）</span>
           <select id="timeMode" class="rounded border border-slate-300 px-3 py-2">
-            <option value="limited" selected>限定秒數</option>
-            <option value="unlimited">無時間限制</option>
+            <option value="limited" selected>⏰ 限定每題秒數</option>
+            <option value="unlimited">⛔ 無時間限制</option>
           </select>
         </label>
 
         <label id="secondsWrap" class="flex flex-col gap-1 sm:col-span-2">
-          <span class="text-sm font-medium">秒數（1~60，預設 10 秒）</span>
-          <input id="timeLimit" type="number" min="1" max="60" value="10" class="rounded border border-slate-300 px-3 py-2" />
+          <span class="text-sm font-medium">⏰ 限定每題秒數（1~60，預設 15 秒）</span>
+          <input id="timeLimit" type="number" min="1" max="60" value="15" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">題目數量（1~200）</span>
-          <input id="questionCount" type="number" min="1" max="200" value="10" class="rounded border border-slate-300 px-3 py-2" />
+          <input id="questionCount" type="number" min="1" max="200" value="30" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">血條設定（預設：🛡 無敵）</span>
+          <span class="text-sm font-medium">血條設定（預設：❤️❤️❤️❤️❤️）</span>
           <select id="hpMode" class="rounded border border-slate-300 px-3 py-2">
-            <option value="off" selected>🛡 無敵</option>
+            <option value="off">🛡 無敵</option>
             <option value="1">❤️</option>
             <option value="2">❤️❤️</option>
             <option value="3">❤️❤️❤️</option>
             <option value="4">❤️❤️❤️❤️</option>
-            <option value="5">❤️❤️❤️❤️❤️</option>
+            <option value="5" selected>❤️❤️❤️❤️❤️</option>
           </select>
         </label>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">積分顯示（預設：開啟）</span>
+          <span class="text-sm font-medium">積分顯示（預設：💯 開啟）</span>
           <select id="scoreMode" class="rounded border border-slate-300 px-3 py-2">
-            <option value="on" selected>開啟</option>
-            <option value="off">關閉</option>
+            <option value="on" selected>💯 開啟</option>
+            <option value="off">🙈 關閉</option>
           </select>
         </label>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">音效（預設：開啟）</span>
+          <span class="text-sm font-medium">音效（預設：🔊 開啟）</span>
           <select id="soundMode" class="rounded border border-slate-300 px-3 py-2">
-            <option value="on" selected>開啟</option>
-            <option value="off">關閉</option>
+            <option value="on" selected>🔊 開啟</option>
+            <option value="off">🔇 關閉</option>
           </select>
         </label>
       </div>
 
-      <button id="startBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
+      <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <button id="startBtn" class="w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 sm:w-auto">開始練習</button>
+        <button id="resetDefaultsBtn" type="button" class="w-full rounded bg-slate-600 px-5 py-3 text-base font-semibold text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">重置預設值</button>
+      </div>
       <p id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
 
       <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
@@ -307,6 +310,7 @@
     const opDivInput = document.getElementById('opDiv');
 
     const startBtn = document.getElementById('startBtn');
+    const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
     const progressText = document.getElementById('progressText');
     const soundToggleBtn = document.getElementById('soundToggleBtn');
     const currentScoreText = document.getElementById('currentScoreText');
@@ -363,18 +367,34 @@
       slowRate: { high: 0.4, medium: 0.25 },
       slowThresholdSec: { add: 8, sub: 10, mul: 12, div: 14 }
     };
-    let config = {
+    const DEFAULT_SETUP = Object.freeze({
       operationTypes: ['add', 'sub', 'mul', 'div'],
-      questionCount: 10,
-      digitLength: 1,
+      questionCount: 30,
+      digitLength: 2,
       mulDivRanges: ['9', '20'],
       timeMode: 'limited',
-      timeLimit: 10,
-      hpMode: 'off',
-      maxHp: 0,
+      timeLimit: 15,
+      hpMode: '5',
       soundMode: 'on',
       scoreMode: 'on'
-    };
+    });
+
+    function createDefaultConfig() {
+      return {
+        operationTypes: [...DEFAULT_SETUP.operationTypes],
+        questionCount: DEFAULT_SETUP.questionCount,
+        digitLength: DEFAULT_SETUP.digitLength,
+        mulDivRanges: [...DEFAULT_SETUP.mulDivRanges],
+        timeMode: DEFAULT_SETUP.timeMode,
+        timeLimit: DEFAULT_SETUP.timeLimit,
+        hpMode: DEFAULT_SETUP.hpMode,
+        maxHp: Number(DEFAULT_SETUP.hpMode),
+        soundMode: DEFAULT_SETUP.soundMode,
+        scoreMode: DEFAULT_SETUP.scoreMode
+      };
+    }
+
+    let config = createDefaultConfig();
 
     function setInvalid(input, isInvalid, borderTarget = input) {
       borderTarget.classList.toggle('border-red-500', isInvalid);
@@ -390,6 +410,36 @@
     function clearSetupError() {
       setupError.textContent = '';
       setupError.classList.add('hidden');
+    }
+
+    function applyDefaultsToSetupForm() {
+      opAddInput.checked = DEFAULT_SETUP.operationTypes.includes('add');
+      opSubInput.checked = DEFAULT_SETUP.operationTypes.includes('sub');
+      opMulInput.checked = DEFAULT_SETUP.operationTypes.includes('mul');
+      opDivInput.checked = DEFAULT_SETUP.operationTypes.includes('div');
+      questionCountInput.value = String(DEFAULT_SETUP.questionCount);
+      digitLengthSelect.value = String(DEFAULT_SETUP.digitLength);
+      mulDivRange9Input.checked = DEFAULT_SETUP.mulDivRanges.includes('9');
+      mulDivRange20Input.checked = DEFAULT_SETUP.mulDivRanges.includes('20');
+      timeModeSelect.value = DEFAULT_SETUP.timeMode;
+      secondsWrap.classList.toggle('hidden', DEFAULT_SETUP.timeMode !== 'limited');
+      timeLimitInput.value = String(DEFAULT_SETUP.timeLimit);
+      hpModeSelect.value = DEFAULT_SETUP.hpMode;
+      soundModeSelect.value = DEFAULT_SETUP.soundMode;
+      scoreModeSelect.value = DEFAULT_SETUP.scoreMode;
+
+      config = createDefaultConfig();
+      clearSetupError();
+      [opAddInput, opSubInput, opMulInput, opDivInput].forEach((input) => setInvalid(input, false, input));
+      [mulDivRange9Input, mulDivRange20Input].forEach((input) => setInvalid(input, false, input.parentElement.parentElement));
+      setInvalid(questionCountInput, false);
+      setInvalid(digitLengthSelect, false);
+      setInvalid(timeLimitInput, false);
+      setInvalid(hpModeSelect, false);
+      setInvalid(soundModeSelect, false);
+      setInvalid(scoreModeSelect, false);
+      renderSoundToggle();
+      renderCurrentScore();
     }
 
     function showQuizError(message) {
@@ -1169,7 +1219,7 @@
       }
       if (![1, 2, 3].includes(digitLength)) {
         setInvalid(digitLengthSelect, true);
-        return '加、減法數字最大值設定不正確。';
+        return '加、減法出題數字設定不正確。';
       }
       if (requiresMulDivRange && mulDivRanges.length === 0) {
         mulDivRangeInputs.forEach((input) => setInvalid(input, true, input.parentElement.parentElement));
@@ -1180,7 +1230,7 @@
       }
       if (timeMode === 'limited' && (!Number.isInteger(timeLimit) || timeLimit < 1 || timeLimit > 60)) {
         setInvalid(timeLimitInput, true);
-        return '限定秒數請輸入 1 到 60 的整數。';
+        return '⏰ 限定每題秒數請輸入 1 到 60 的整數。';
       }
       if (!['off', '1', '2', '3', '4', '5'].includes(hpMode)) {
         setInvalid(hpModeSelect, true);
@@ -1225,7 +1275,7 @@
         config.mulDivRanges
       );
       if (config.questionCount > maxUniqueCount) {
-        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加減法數字最大值、乘除法出題範圍或題目種類。`);
+        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`);
         return;
       }
 
@@ -1236,7 +1286,7 @@
         config.mulDivRanges
       );
       if (questions.length < config.questionCount) {
-        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加減法數字最大值、乘除法出題範圍或題目種類。`);
+        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`);
         return;
       }
       currentIndex = 0;
@@ -1430,18 +1480,18 @@
           .map((rangeType) => (rangeType === '9' ? '9x9（2x2 ~ 9x9）' : '20x20（11x2 ~ 20x20）'))
           .join('、')
         : '不適用';
-      const timeModeLabel = config.timeMode === 'limited' ? `限定秒數（${config.timeLimit} 秒）` : '無時間限制';
+      const timeModeLabel = config.timeMode === 'limited' ? `⏰ 限定每題秒數（${config.timeLimit} 秒）` : '⛔ 無時間限制';
       const hpModeLabel = config.maxHp > 0 ? '❤️'.repeat(config.maxHp) : '🛡 無敵';
-      const scoreModeLabel = config.scoreMode === 'on' ? '開啟' : '關閉';
+      const scoreModeLabel = config.scoreMode === 'on' ? '💯 開啟' : '🙈 關閉';
       const startedAtLabel = formatLocalDateTimeWithTz(quizStartedAtMs);
       const endedAtLabel = formatLocalDateTimeWithTz(quizEndedAtMs);
       configSummaryList.innerHTML = '';
       [
         `題目種類：${selectedOperations}`,
         `題目數量：${config.questionCount}`,
-        `加、減法數字最大值：${addSubRangeLabel}`,
+        `加、減法出題數字：${addSubRangeLabel}`,
         `乘、除法出題範圍：${mulDivRangeLabel}`,
-        `單題答題時間：${timeModeLabel}`,
+        `答題時間限制：${timeModeLabel}`,
         `血條設定：${hpModeLabel}`,
         `積分顯示：${scoreModeLabel}`,
         `開始作答時間：${startedAtLabel}`,
@@ -1594,6 +1644,7 @@
     }
 
     startBtn.addEventListener('click', startQuiz);
+    resetDefaultsBtn.addEventListener('click', applyDefaultsToSetupForm);
     submitBtn.addEventListener('click', () => submitCurrentAnswer(false));
     function clearCurrentAnswer() {
       answerInput.value = '';
@@ -1699,8 +1750,7 @@
       setInvalid(scoreModeSelect, false);
       config.scoreMode = scoreModeSelect.value;
     });
-    renderSoundToggle();
-    renderCurrentScore();
+    applyDefaultsToSetupForm();
   </script>
 </body>
 </html>
