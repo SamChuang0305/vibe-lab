@@ -29,6 +29,7 @@
 - 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
 - 本 repo 維護子專案 sitemap：`https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
 - 社群分享預覽圖統一使用：`https://sam.webspace.tw/vibe-lab/math-practice/images/social_preview_1200x630.png`（1200x630 PNG），並由 `index.html` 的 Open Graph / Twitter meta 引用。
+- `index.html` 與 `user-guide.html` 頁面頂部共用同一張 Banner：`./images/social_preview_1200x630.png`。
 - 主網域 `robots.txt` 由主站（Hexo）維護，建議在 `https://sam.webspace.tw/robots.txt` 宣告：
   - `https://sam.webspace.tw/sitemap.xml`
   - `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
