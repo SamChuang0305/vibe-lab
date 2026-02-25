@@ -21,8 +21,9 @@
   - `meta description`
   - `meta robots`（`index,follow,max-image-preview:large`）
   - `link rel="canonical"`
-  - Open Graph：`og:title`、`og:description`、`og:type`、`og:url`、`og:locale`
-  - Twitter：`twitter:card`、`twitter:title`、`twitter:description`
+  - Open Graph：`og:title`、`og:description`、`og:type`、`og:url`、`og:locale`、`og:site_name`、`og:image`、`og:image:secure_url`、`og:image:type`、`og:image:width`、`og:image:height`、`og:image:alt`
+  - Twitter：`twitter:card`（`summary_large_image`）、`twitter:title`、`twitter:description`、`twitter:image`、`twitter:image:alt`
+  - 社群分享圖固定使用：`https://sam.webspace.tw/vibe-lab/math-practice/images/social_preview_1200x630.png`（1200x630 PNG）
   - JSON-LD（`WebApplication`）至少包含：`name`、`description`、`url`、`applicationCategory`、`operatingSystem`、`inLanguage`、`offers`
 - 子專案需維護 `sitemap.xml`，路徑為：
   - `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
