@@ -8,7 +8,7 @@
 
 ## 前端樣式載入規格
 
-- `index.html` 僅可載入本地 `styles/tailwind.css`，不得使用 `https://cdn.tailwindcss.com` runtime script。
+- `index.html`、`user-guide.html` 僅可載入本地 `styles/tailwind.css`，不得使用 `https://cdn.tailwindcss.com` runtime script。
 - Tailwind 來源檔為 `styles/input.css`，由 `tailwind.config.js` 掃描 `index.html` 後產生輸出。
 - 樣式建置命令：
   - `npm run build:css`：一次性編譯
@@ -97,6 +97,10 @@
 - 重置預設值
   - 位置：位於 `開始練習` 按鈕右側
   - 點擊後會將所有設定恢復為預設值
+- 操作說明
+  - 位置：位於 `開始練習`、`重置預設值` 同一列
+  - 點擊後開啟 `user-guide.html`
+  - `user-guide.html` 底部提供 `開始練習` 按鈕返回 `index.html`
 - 說明
   - 隨機產生數學計算題目。
   - 題型固定為 a、b 兩個數字做四則計算。
@@ -252,6 +256,19 @@
 - PDF 匯出依賴瀏覽器原生列印功能，版面會受瀏覽器版本與列印設定影響。
 - 建議在列印視窗選擇 A4 與適當邊界，以避免內容被截斷。
 - 題目數量很多（例如 200 題）時，列印預覽與輸出時間會增加，屬正常現象。
+
+## 使用者操作說明頁（`user-guide.html`）
+
+- 對象：終端使用者（非開發者、無技術背景）。
+- 內容定位：以實際操作流程為主，不描述實作細節。
+- 至少涵蓋：
+  - 快速開始流程
+  - 關卡設定欄位說明
+  - 作答流程與常用操作
+  - 結果頁重點
+  - 下載 PDF 操作
+  - 常見問題
+- 維護規則：後續若功能、按鈕名稱、頁面流程異動，必須同步更新 `user-guide.html`。
 
 ## 防呆與提示樣式
 

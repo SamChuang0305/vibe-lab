@@ -4,6 +4,7 @@
 - `index.html`: 單一入口與主要應用程式邏輯（UI、出題、作答、結果、PDF 列印）。
 - `README.md`: 使用說明與快速上手指南。
 - `spec.md`: 產品規格文件，功能或規則調整時需同步更新。
+- `user-guide.html`: 終端使用者操作說明頁（給非技術使用者閱讀）。
 - `docs/adr/`: 架構決策紀錄（ADR），重大設計變更請新增一份檔案。
 - `styles/input.css`: Tailwind CSS 輸入檔（`@tailwind` 指令）。
 - `styles/tailwind.css`: 產線使用的靜態樣式輸出檔（由 CLI 產生後提交）。
@@ -22,8 +23,8 @@
   - `python3 -m http.server 8000`
   - 開啟 `http://localhost:8000`
 - 快速檢查變更：
-  - `git diff -- index.html README.md spec.md AGENTS.md`
-  - `rg "關鍵字" index.html README.md spec.md AGENTS.md`
+  - `git diff -- index.html user-guide.html README.md spec.md AGENTS.md`
+  - `rg "關鍵字" index.html user-guide.html README.md spec.md AGENTS.md`
 
 ## Coding Style & Naming Conventions
 - 使用 2 spaces 縮排（與既有 `index.html` 一致）。
@@ -52,7 +53,7 @@
   - `chore`: 建構程序或輔助工具變動（maintain）
   - `revert`: 撤銷先前 commit（例如 `revert: type(scope): subject`）
 - 建議格式：`type: 簡短動作 + 影響範圍`（可含中括號標示功能區，如 `[下載 PDF]`）。
-- 流程規則：只要該次有任何程式或規格修改，需在該次變更中同步檢查並更新 `index.html`、`spec.md`、`README.md`（僅使用說明）、`docs/adr/`（若有架構決策變更）與 `AGENTS.md`（若有流程規範變更），完成後執行 `git commit`。
+- 流程規則：只要該次有任何程式或規格修改，需在該次變更中同步檢查並更新 `index.html`、`user-guide.html`（功能/流程/按鈕文案異動時必須更新）、`spec.md`、`README.md`（僅使用說明）、`docs/adr/`（若有架構決策變更）與 `AGENTS.md`（若有流程規範變更），完成後執行 `git commit`。
 - PR 需包含：
   - 變更摘要與動機
   - 受影響檔案清單
