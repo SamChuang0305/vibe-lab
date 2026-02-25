@@ -4,7 +4,15 @@
 
 - HTML
 - JavaScript
-- Tailwind CSS
+- Tailwind CSS（CLI 編譯為靜態 CSS）
+
+## 前端樣式載入規格
+
+- `index.html` 僅可載入本地 `styles/tailwind.css`，不得使用 `https://cdn.tailwindcss.com` runtime script。
+- Tailwind 來源檔為 `styles/input.css`，由 `tailwind.config.js` 掃描 `index.html` 後產生輸出。
+- 樣式建置命令：
+  - `npm run build:css`：一次性編譯
+  - `npm run watch:css`：開發期間即時編譯
 
 ## SEO 規格
 

@@ -5,12 +5,19 @@
 - `README.md`: 使用說明與快速上手指南。
 - `spec.md`: 產品規格文件，功能或規則調整時需同步更新。
 - `docs/adr/`: 架構決策紀錄（ADR），重大設計變更請新增一份檔案。
-- `js/tailwindcss/3.4.17.js`: 本地 Tailwind 腳本備援；目前主要透過 CDN 載入。
+- `styles/input.css`: Tailwind CSS 輸入檔（`@tailwind` 指令）。
+- `styles/tailwind.css`: 產線使用的靜態樣式輸出檔（由 CLI 產生後提交）。
+- `tailwind.config.js`: Tailwind 掃描與主題設定。
+- `package.json`: Tailwind CLI 建置腳本與相依套件版本。
 - `js/URL.txt`: 外部資源參考。
 - 使用裝置範圍：電腦、手機、平板；行動裝置包含 Android 與 iOS。
 
 ## Build, Test, and Development Commands
-- 本專案無打包流程，直接以瀏覽器開啟 `index.html` 即可執行。
+- 本專案主程式無 JS 打包流程，直接以瀏覽器開啟 `index.html` 即可執行。
+- 樣式建置（Tailwind CLI）：
+  - `npm install`
+  - `npm run build:css`
+  - `npm run watch:css`（開發時即時編譯）
 - 建議本機啟動靜態伺服器避免瀏覽器限制：
   - `python3 -m http.server 8000`
   - 開啟 `http://localhost:8000`

@@ -7,13 +7,22 @@
 ## 使用技術
 - HTML
 - JavaScript
-- Tailwind CSS
+- Tailwind CSS（透過 CLI 輸出靜態 `styles/tailwind.css`）
 
 ## 快速開始
 - 直接以瀏覽器開啟 `index.html`。
 - 建議使用本機靜態伺服器：
   - `python3 -m http.server 8000`
   - 開啟 `http://localhost:8000`
+
+## 樣式建置（Tailwind CLI）
+- 安裝相依套件：
+  - `npm install`
+- 產生正式樣式檔：
+  - `npm run build:css`
+- 開發時即時編譯：
+  - `npm run watch:css`
+- 產線頁面載入 `styles/tailwind.css`，不使用 `cdn.tailwindcss.com`。
 
 ## SEO 與收錄
 - 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
