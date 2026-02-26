@@ -893,6 +893,10 @@
       };
     }
 
+    function scrollPageToTop() {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+
     function applyLearningSuggestionPreset(preset) {
       if (!preset) {
         return;
@@ -932,7 +936,7 @@
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollPageToTop();
       startBtn.focus();
     }
 
@@ -1324,6 +1328,7 @@
       setupPanel.classList.add('hidden');
       resultPanel.classList.add('hidden');
       quizPanel.classList.remove('hidden');
+      scrollPageToTop();
 
       renderQuestion();
     }
@@ -1483,6 +1488,7 @@
       hideGameOverModal();
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
+      scrollPageToTop();
       clearPdfError();
       endedEarly = endReason === 'early_leave';
       endedByHpZero = endReason === 'hp_zero';
@@ -1696,6 +1702,7 @@
       resultPanel.classList.add('hidden');
       quizPanel.classList.add('hidden');
       setupPanel.classList.remove('hidden');
+      scrollPageToTop();
     });
     downloadPdfBtn.addEventListener('click', exportResultToPdf);
     mobilePdfFilenameText.addEventListener('click', () => {
