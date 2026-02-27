@@ -27,6 +27,15 @@
   <meta name="twitter:description" content="免費的國小數學四則運算線上練習工具，支援加減乘除、限時挑戰、血條模式、學習建議與作答結果下載 PDF。" />
   <meta name="twitter:image" content="https://sam.webspace.tw/vibe-lab/math-practice/images/social_preview_1200x630.png" />
   <meta name="twitter:image:alt" content="算你厲害網站預覽圖，顯示關卡設定與作答介面示意" />
+  <!-- TODO: 請由 Google Analytics 管理員替換為正式 GA4 Measurement ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', window.GA_MEASUREMENT_ID);
+  </script>
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -417,6 +426,26 @@
 
     let config = createDefaultConfig();
 
+    function trackEvent(eventName, params = {}) {
+      if (typeof window.gtag !== 'function') {
+        return;
+      }
+      window.gtag('event', eventName, params);
+    }
+
+    function getQuizResultCounts() {
+      let correctCount = 0;
+      let wrongCount = 0;
+      questions.forEach((question) => {
+        if (question.userAnswer === question.correct) {
+          correctCount += 1;
+        } else {
+          wrongCount += 1;
+        }
+      });
+      return { correctCount, wrongCount };
+    }
+
     function setInvalid(input, isInvalid, borderTarget = input) {
       borderTarget.classList.toggle('border-red-500', isInvalid);
       borderTarget.classList.toggle('ring-2', isInvalid);
@@ -603,6 +632,13 @@
         showPdfError('請先完成作答並進入結果頁，再下載 PDF。');
         return;
       }
+      const counts = getQuizResultCounts();
+      trackEvent('mp_pdf_download_click', {
+        has_result_visible: true,
+        total_questions: questions.length,
+        correct_count: counts.correctCount,
+        wrong_count: counts.wrongCount
+      });
       exportResultToPdfByPrint();
     }
 
@@ -1329,6 +1365,17 @@
       resultPanel.classList.add('hidden');
       quizPanel.classList.remove('hidden');
       scrollPageToTop();
+      trackEvent('mp_quiz_start', {
+        operation_types: config.operationTypes.join(','),
+        question_count: config.questionCount,
+        digit_length: config.digitLength,
+        mul_div_ranges: config.mulDivRanges.length > 0 ? config.mulDivRanges.join(',') : 'none',
+        time_mode: config.timeMode,
+        time_limit: config.timeLimit,
+        hp_mode: config.hpMode,
+        score_mode: config.scoreMode,
+        sound_mode: config.soundMode
+      });
 
       renderQuestion();
     }
@@ -1456,6 +1503,7 @@
         setInvalid(answerInput, false);
         q.userAnswer = parsedValue;
         q.elapsedSeconds = elapsed;
+        const questionIndex = currentIndex + 1;
         const isCorrect = q.userAnswer === q.correct;
         const willGameOver = !isCorrect && willHpReachZeroAfterDeduct();
         if (isCorrect) {
@@ -1470,6 +1518,18 @@
         if (!willGameOver) {
           playSound(isCorrect ? 'correct' : 'wrong');
         }
+        const remainingHpAfterAnswer = config.maxHp > 0
+          ? (isCorrect ? currentHp : Math.max(0, currentHp - 1))
+          : -1;
+        trackEvent('mp_answer_submit', {
+          question_index: questionIndex,
+          operation_type: q.operationType,
+          is_correct: isCorrect,
+          elapsed_seconds: q.elapsedSeconds,
+          current_streak: correctStreak,
+          current_score: currentScore,
+          remaining_hp: remainingHpAfterAnswer
+        });
         if (q.userAnswer !== q.correct && deductHpAndCheckEnd()) {
           return;
         }
@@ -1593,6 +1653,19 @@
         tr.appendChild(elapsedTd);
         resultBody.appendChild(tr);
       });
+      const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
+      const durationSeconds = Number.isFinite(quizStartedAtMs) && Number.isFinite(quizEndedAtMs)
+        ? Math.max(0, Math.round((quizEndedAtMs - quizStartedAtMs) / 1000))
+        : 0;
+      trackEvent('mp_quiz_finish', {
+        end_reason: endReason,
+        total_questions: questions.length,
+        correct_count: correctCount,
+        wrong_count: wrongCount,
+        accuracy,
+        duration_seconds: durationSeconds,
+        final_score: currentScore
+      });
       renderLearningSuggestions(questions);
       renderMobilePdfFilenameHint();
       renderTotalScore();
@@ -1601,7 +1674,6 @@
         ? `剩餘血量 ${'❤️'.repeat(Math.max(0, Math.min(currentHp, config.maxHp)))}${'🖤'.repeat(config.maxHp - Math.max(0, Math.min(currentHp, config.maxHp)))}，`
         : '';
       scoreText.textContent = `${hpStatus}答對 ${correctCount} 題，答錯 ${wrongCount} 題`;
-      const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
       if (accuracy >= 80) {
         playSound('result_high');
       } else if (accuracy >= 40) {

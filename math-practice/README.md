@@ -37,6 +37,16 @@
   1. 到 Google Search Console 提交 `https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
   2. 以 URL 檢查工具測試 `https://sam.webspace.tw/vibe-lab/math-practice/` 是否可建立索引
 
+## Google Analytics（GA4）
+- `index.html` 與 `user-guide.html` 皆已導入 GA4 `gtag.js` 基本追蹤碼。
+- `index.html` 另包含核心事件追蹤：
+  - `mp_quiz_start`
+  - `mp_answer_submit`
+  - `mp_quiz_finish`
+  - `mp_pdf_download_click`
+- 目前程式碼使用佔位 ID：`G-XXXXXXXXXX`，部署前需替換為正式 Measurement ID。
+- 管理員交接文件：`docs/google-analytics-handoff.md`
+
 ## 使用流程
 1. 首頁主標題顯示為 `算你厲害｜關卡設定`。
 2. 初次使用可先點擊設定頁的 `操作說明`，開啟 `user-guide.html` 查看完整新手教學。

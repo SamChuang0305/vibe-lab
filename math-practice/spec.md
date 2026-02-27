@@ -32,6 +32,20 @@
   - 由主網域根目錄 `robots.txt`（`https://sam.webspace.tw/robots.txt`）宣告主站與子專案兩份 sitemap。
   - 子路徑的 `robots.txt` 不作為主要收錄入口。
 
+## 分析追蹤規格（Google Analytics 4）
+
+- 追蹤工具：GA4（`gtag.js`，非 GTM）。
+- 追蹤碼載入頁面：`index.html`、`user-guide.html`。
+- Measurement ID 使用 `G-XXXXXXXXXX` 佔位，部署前必須替換為正式 ID。
+- 基本追蹤：兩頁皆需送出 `page_view`。
+- `index.html` 核心事件：
+  - `mp_quiz_start`：成功開始練習後送出，帶入關卡設定參數。
+  - `mp_answer_submit`：送出有效答案後送出，帶入題型、正確與否、作答秒數、連對、積分、剩餘血量。
+  - `mp_quiz_finish`：進入結果頁時送出，帶入結束原因、答對答錯、正確率、總時長、最終積分。
+  - `mp_pdf_download_click`：點擊下載 PDF 並進入列印流程前送出，帶入本次作答統計。
+- 追蹤失效不得影響主流程：若 `gtag` 不存在，作答、計分、PDF 匯出仍須正常運作。
+- 管理員交接文件位於 `docs/google-analytics-handoff.md`。
+
 ## 功能概述
 
 - 隨機產生數學計算題目。
