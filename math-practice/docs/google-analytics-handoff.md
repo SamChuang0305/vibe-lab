@@ -15,8 +15,8 @@
 
 ## 佈署前必要動作
 
-1. 取得正式 GA4 Measurement ID（格式：`G-XXXXXXXXXX`）。
-2. 將以下兩個檔案中的佔位 ID `G-XXXXXXXXXX` 替換為正式 ID：
+1. 本專案目前使用正式 GA4 Measurement ID：`G-EYGSR07X7W`。
+2. 若未來需更換 ID，請同步更新以下兩個檔案中的 Measurement ID：
    - `index.html`
    - `user-guide.html`
 3. 確認 `gtag/js` script URL 與 `gtag('config', ...)` 使用同一個正式 ID。
@@ -83,7 +83,7 @@
 ## 常見問題排查
 
 1. 事件完全沒進來：
-   - 檢查是否仍為佔位 ID `G-XXXXXXXXXX`。
+   - 檢查兩頁中的 Measurement ID 是否為最新正式值（目前為 `G-EYGSR07X7W`）。
 2. 只有 `page_view` 沒有自訂事件：
    - 檢查前端是否有 JS 錯誤中斷。
    - 檢查是否被瀏覽器擋追蹤（廣告阻擋套件）。

@@ -36,7 +36,7 @@
 
 - 追蹤工具：GA4（`gtag.js`，非 GTM）。
 - 追蹤碼載入頁面：`index.html`、`user-guide.html`。
-- Measurement ID 使用 `G-XXXXXXXXXX` 佔位，部署前必須替換為正式 ID。
+- Measurement ID 目前設定為正式 ID：`G-EYGSR07X7W`。
 - 基本追蹤：兩頁皆需送出 `page_view`。
 - `index.html` 核心事件：
   - `mp_quiz_start`：成功開始練習後送出，帶入關卡設定參數。

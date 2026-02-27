@@ -44,7 +44,7 @@
   - `mp_answer_submit`
   - `mp_quiz_finish`
   - `mp_pdf_download_click`
-- 目前程式碼使用佔位 ID：`G-XXXXXXXXXX`，部署前需替換為正式 Measurement ID。
+- 目前程式碼使用正式 GA4 Measurement ID：`G-EYGSR07X7W`。
 - 管理員交接文件：`docs/google-analytics-handoff.md`
 
 ## 使用流程
