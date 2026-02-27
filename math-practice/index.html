@@ -226,6 +226,7 @@
           <li>題目計算結果不會小於 0、只會有整數。</li>
           <li>不會出現重複題目。</li>
           <li>設定血條後，當答錯或超時會扣血，若血量歸零則直接結束。</li>
+          <li>程式版本：<span id="setupVersionText"></span></li>
         </ul>
       </div>
 
@@ -351,6 +352,7 @@
     const mulDivRange20Input = document.getElementById('mulDivRange20');
     const secondsWrap = document.getElementById('secondsWrap');
     const setupError = document.getElementById('setupError');
+    const setupVersionText = document.getElementById('setupVersionText');
     const updateNotice = document.getElementById('updateNotice');
     const updateNoticeText = document.getElementById('updateNoticeText');
     const updateReloadBtn = document.getElementById('updateReloadBtn');
@@ -453,6 +455,10 @@
         return;
       }
       window.gtag('event', eventName, params);
+    }
+
+    function renderSetupVersion() {
+      setupVersionText.textContent = CURRENT_BUILD_ID;
     }
 
     function hideUpdateNotice() {
@@ -1649,7 +1655,8 @@
         `血條設定：${hpModeLabel}`,
         `積分顯示：${scoreModeLabel}`,
         `開始作答時間：${startedAtLabel}`,
-        `結束作答時間：${endedAtLabel}`
+        `結束作答時間：${endedAtLabel}`,
+        `程式版本：${CURRENT_BUILD_ID}`
       ].forEach((text) => {
         const li = document.createElement('li');
         li.textContent = text;
@@ -1924,6 +1931,7 @@
       setInvalid(scoreModeSelect, false);
       config.scoreMode = scoreModeSelect.value;
     });
+    renderSetupVersion();
     applyDefaultsToSetupForm();
     checkForUpdateOnSetup();
   </script>
