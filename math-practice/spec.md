@@ -17,6 +17,7 @@
 ## SEO 規格
 
 - 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
+- 首頁網址正規化規則：若以 `.../index.html` 進入首頁，前端需以 `history.replaceState` 改寫為 `.../`，並保留 query/hash。
 - 首頁 `head` 必須提供以下 SEO 標記：
   - `meta description`
   - `meta robots`（`index,follow,max-image-preview:large`）
@@ -118,7 +119,7 @@
 - 操作說明
   - 位置：位於 `開始練習`、`重置預設值` 同一列
   - 點擊後開啟 `user-guide.html`
-  - `user-guide.html` 底部提供 `開始練習` 按鈕返回 `index.html`
+  - `user-guide.html` 底部提供 `開始練習` 按鈕返回首頁根路徑（`./`）
 - 說明
   - 隨機產生數學計算題目。
   - 題型固定為 a、b 兩個數字做四則計算。

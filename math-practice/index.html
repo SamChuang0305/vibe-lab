@@ -27,6 +27,19 @@
   <meta name="twitter:description" content="免費的國小數學四則運算線上練習工具，支援加減乘除、限時挑戰、血條模式、學習建議與作答結果下載 PDF。" />
   <meta name="twitter:image" content="https://sam.webspace.tw/vibe-lab/math-practice/images/social_preview_1200x630.png" />
   <meta name="twitter:image:alt" content="算你厲害網站預覽圖，顯示關卡設定與作答介面示意" />
+  <script>
+    (function normalizeIndexUrl() {
+      if (!window.history || typeof window.history.replaceState !== 'function') {
+        return;
+      }
+      if (!/\/index\.html$/.test(window.location.pathname)) {
+        return;
+      }
+      const normalizedPath = window.location.pathname.replace(/\/index\.html$/, '/');
+      const normalizedUrl = `${window.location.origin}${normalizedPath}${window.location.search}${window.location.hash}`;
+      window.history.replaceState(window.history.state, '', normalizedUrl);
+    })();
+  </script>
   <!-- 若未來需要更換資料流，請由 Google Analytics 管理員更新 GA4 Measurement ID -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-EYGSR07X7W"></script>
   <script>

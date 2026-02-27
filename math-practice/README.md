@@ -27,6 +27,7 @@
 
 ## SEO 與收錄
 - 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
+- 首頁網址正規化：若使用者進入 `.../index.html`，前端會自動改寫為 `.../`（保留 query/hash），降低 GA4 路徑分流。
 - 本 repo 維護子專案 sitemap：`https://sam.webspace.tw/vibe-lab/math-practice/sitemap.xml`
 - 社群分享預覽圖統一使用：`https://sam.webspace.tw/vibe-lab/math-practice/images/social_preview_1200x630.png`（1200x630 PNG），並由 `index.html` 的 Open Graph / Twitter meta 引用。
 - `index.html` 與 `user-guide.html` 頁面頂部共用同一張 Banner：`./images/social_preview_1200x630.png`。
@@ -63,7 +64,7 @@
 ## 操作說明頁（給終端使用者）
 - 檔案：`user-guide.html`
 - 入口：`index.html` 設定頁按鈕列中的 `操作說明`。
-- 返回：`user-guide.html` 底部提供 `開始練習` 按鈕可回 `index.html`。
+- 返回：`user-guide.html` 底部提供 `開始練習` 按鈕可回首頁根路徑（`./`）。
 - 維護規則：後續只要功能、按鈕名稱或操作流程異動，需同步更新 `user-guide.html`。
 
 ## 積分規則
