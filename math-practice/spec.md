@@ -47,6 +47,25 @@
 - 追蹤失效不得影響主流程：若 `gtag` 不存在，作答、計分、PDF 匯出仍須正常運作。
 - 管理員交接文件位於 `docs/google-analytics-handoff.md`。
 
+## 版本更新規格（buildId）
+
+- 版本識別採用 `buildId` 字串，格式為 `YYYYMMDD.N`（例如 `20260227.3`）。
+- 根目錄需提供 `version.json`，格式固定為：
+  ```json
+  {
+    "buildId": "20260227.3"
+  }
+  ```
+- `index.html` 需維護 `CURRENT_BUILD_ID` 常數，且值必須與 `version.json` 的 `buildId` 一致。
+- 前端僅在設定頁（首頁）顯示時檢查新版：
+  - 初次載入且停留設定頁。
+  - 由結果頁按 `重新開始` 回到設定頁。
+- 偵測 `version.json.buildId !== CURRENT_BUILD_ID` 時，設定頁顯示新版本提示與 `立即更新` 按鈕。
+- 使用者點擊 `立即更新` 後執行 `window.location.reload()` 取得新版。
+- 作答中與結果頁不得主動跳出更新提示或強制刷新。
+- 讀取 `version.json` 可加上 `?ts=${Date.now()}` 搭配 `cache: 'no-store'` 避免快取；`Date.now()` 僅作防快取，不參與版本判斷。
+- 版本判斷只做字串是否相等，不做時間、時區或大小比較。
+
 ## 功能概述
 
 - 隨機產生數學計算題目。
@@ -68,6 +87,7 @@
 - 畫面一次只顯示一題。
 - 可透過設定決定題目種類、題目數量、加、減法出題數字、乘除出題範圍、是否限時、血條設定、積分顯示、音效。
 - 作答結果會依題目列表表現產生「學習建議」，提供針對題型的關卡設定與練習目標。
+- 當有新 `buildId` 時，設定頁會顯示更新提示，使用者可手動點擊更新後再開始新一輪練習。
 - `index.html` 與 `user-guide.html` 頂部顯示共用 Banner 圖：`./images/social_preview_1200x630.png`（1200x630）。
 - `index.html` 列印結果頁（PDF）時，Banner 不顯示，避免影響匯出版面。
 
