@@ -168,12 +168,12 @@
 
         <label id="secondsWrap" class="flex flex-col gap-1 sm:col-span-2">
           <span class="text-sm font-medium">⏰ 限定每題秒數（1~60，預設 15 秒）</span>
-          <input id="timeLimit" type="number" min="1" max="60" value="15" class="rounded border border-slate-300 px-3 py-2" />
+          <input id="timeLimit" type="number" min="1" max="60" value="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">題目數量（1~200）</span>
-          <input id="questionCount" type="number" min="1" max="200" value="30" class="rounded border border-slate-300 px-3 py-2" />
+          <input id="questionCount" type="number" min="1" max="200" value="30" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="rounded border border-slate-300 px-3 py-2" />
         </label>
 
         <label class="flex flex-col gap-1">
@@ -265,7 +265,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <input id="answerInput" type="text" inputmode="numeric" pattern="[0-9]*" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
+        <input id="answerInput" name="mp_ans_x" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="w-full rounded border border-slate-300 px-3 py-3 text-base sm:w-52" placeholder="請輸入答案" />
         <button id="submitBtn" class="w-full rounded bg-green-600 px-5 py-3 text-base font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 sm:w-auto">送出</button>
         <button id="clearBtn" class="w-full rounded bg-slate-500 px-5 py-3 text-base font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">清空</button>
         <button id="leaveBtn" class="w-full rounded bg-rose-600 px-5 py-3 text-base font-semibold text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto">離開</button>
@@ -413,7 +413,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260302.1';
+    const CURRENT_BUILD_ID = '20260302.2';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const LEARNING_SUGGESTION_RULES = {
       minSamples: 3,
@@ -450,6 +450,18 @@
     }
 
     let config = createDefaultConfig();
+
+    function disableInputAssist(inputElement) {
+      if (!inputElement) {
+        return;
+      }
+      inputElement.setAttribute('autocomplete', 'off');
+      inputElement.setAttribute('autocorrect', 'off');
+      inputElement.setAttribute('autocapitalize', 'off');
+      inputElement.setAttribute('spellcheck', 'false');
+    }
+
+    [timeLimitInput, questionCountInput, answerInput].forEach(disableInputAssist);
 
     function trackEvent(eventName, params = {}) {
       if (typeof window.gtag !== 'function') {
