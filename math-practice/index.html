@@ -336,6 +336,16 @@
         <button id="gameOverCloseBtn" class="mt-6 w-full rounded bg-blue-600 px-5 py-3 text-base font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">關閉</button>
       </div>
     </div>
+    <div id="leaveConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black px-4" role="dialog" aria-modal="true" aria-labelledby="leaveConfirmTitle">
+      <div class="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-2xl">
+        <p id="leaveConfirmTitle" class="text-xl font-bold text-slate-900">確認要離開？</p>
+        <p class="mt-2 text-sm text-slate-600">將會直接顯示作答結果。</p>
+        <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <button id="leaveConfirmCancelBtn" type="button" class="w-full rounded bg-slate-500 px-5 py-3 text-base font-semibold text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 sm:w-auto">取消</button>
+          <button id="leaveConfirmConfirmBtn" type="button" class="w-full rounded bg-rose-600 px-5 py-3 text-base font-semibold text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-300 sm:w-auto">確認離開</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script>
@@ -396,6 +406,9 @@
     const restartBtn = document.getElementById('restartBtn');
     const gameOverModal = document.getElementById('gameOverModal');
     const gameOverCloseBtn = document.getElementById('gameOverCloseBtn');
+    const leaveConfirmModal = document.getElementById('leaveConfirmModal');
+    const leaveConfirmCancelBtn = document.getElementById('leaveConfirmCancelBtn');
+    const leaveConfirmConfirmBtn = document.getElementById('leaveConfirmConfirmBtn');
 
     let questions = [];
     let currentIndex = 0;
@@ -414,7 +427,8 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260303.4';
+    let shouldResumeTimerAfterLeaveCancel = false;
+    const CURRENT_BUILD_ID = '20260303.5';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
@@ -908,6 +922,9 @@
       if (config.timeMode !== 'limited') {
         return;
       }
+      if (isGameOverModalOpen() || isLeaveConfirmModalOpen() || timerId !== null) {
+        return;
+      }
       timerId = setInterval(() => {
         remainingSeconds -= 1;
         if (remainingSeconds <= 0) {
@@ -917,6 +934,11 @@
         }
         timerText.textContent = `剩餘時間：${remainingSeconds} 秒`;
       }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+      timerId = null;
     }
 
     function randomInt(min, max) {
@@ -1593,7 +1615,7 @@
     }
 
     function renderQuestion() {
-      clearInterval(timerId);
+      stopTimer();
 
       const q = questions[currentIndex];
       progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
@@ -1628,14 +1650,63 @@
       return !gameOverModal.classList.contains('hidden');
     }
 
+    function isLeaveConfirmModalOpen() {
+      return !leaveConfirmModal.classList.contains('hidden');
+    }
+
+    function closeLeaveConfirmModal({ shouldResumeTimer = false, shouldRestoreFocus = true } = {}) {
+      if (!isLeaveConfirmModalOpen()) {
+        return;
+      }
+      leaveConfirmModal.classList.add('hidden');
+      leaveConfirmModal.classList.remove('flex');
+      shouldResumeTimerAfterLeaveCancel = false;
+      if (!isGameOverModalOpen()) {
+        document.body.classList.remove('overflow-hidden');
+      }
+      if (shouldResumeTimer && config.timeMode === 'limited' && !quizPanel.classList.contains('hidden')) {
+        resumeTimerIfNeeded();
+      }
+      if (shouldRestoreFocus && !quizPanel.classList.contains('hidden') && !isGameOverModalOpen()) {
+        answerInput.focus();
+      }
+    }
+
+    function openLeaveConfirmModal() {
+      if (quizPanel.classList.contains('hidden') || isGameOverModalOpen() || isLeaveConfirmModalOpen()) {
+        return;
+      }
+      shouldResumeTimerAfterLeaveCancel = config.timeMode === 'limited' && remainingSeconds > 0;
+      stopTimer();
+      leaveConfirmModal.classList.remove('hidden');
+      leaveConfirmModal.classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+      leaveConfirmCancelBtn.focus();
+    }
+
+    function confirmLeaveQuiz() {
+      closeLeaveConfirmModal({ shouldResumeTimer: false, shouldRestoreFocus: false });
+      if (currentIndex < questions.length) {
+        const q = questions[currentIndex];
+        if (!q.timeout && q.userAnswer === null) {
+          q.elapsedSeconds = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
+        }
+      }
+      stopTimer();
+      recordQuizEndTimeIfNeeded();
+      finishQuiz('early_leave');
+    }
+
     function hideGameOverModal() {
       gameOverModal.classList.add('hidden');
       gameOverModal.classList.remove('flex');
-      document.body.classList.remove('overflow-hidden');
+      if (!isLeaveConfirmModalOpen()) {
+        document.body.classList.remove('overflow-hidden');
+      }
     }
 
     function showGameOverModal() {
-      clearInterval(timerId);
+      stopTimer();
       recordQuizEndTimeIfNeeded();
       gameOverModalOpenedAt = Date.now();
       gameOverModal.classList.remove('hidden');
@@ -1678,7 +1749,7 @@
       if (isGameOverModalOpen()) {
         return;
       }
-      clearInterval(timerId);
+      stopTimer();
 
       const q = questions[currentIndex];
       const elapsed = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
@@ -1758,6 +1829,7 @@
 
     function finishQuiz(endReason = 'normal') {
       hideGameOverModal();
+      closeLeaveConfirmModal({ shouldResumeTimer: false, shouldRestoreFocus: false });
       quizPanel.classList.add('hidden');
       resultPanel.classList.remove('hidden');
       scrollPageToTop();
@@ -1965,23 +2037,12 @@
     }
     clearBtn.addEventListener('click', clearCurrentAnswer);
     leaveBtn.addEventListener('click', () => {
-      const confirmed = window.confirm('確認要離開？將會直接顯示作答結果');
-      if (!confirmed) {
-        return;
-      }
-      if (currentIndex < questions.length) {
-        const q = questions[currentIndex];
-        if (!q.timeout && q.userAnswer === null) {
-          q.elapsedSeconds = Math.max(0, Math.ceil((Date.now() - currentQuestionStartedAt) / 1000));
-        }
-      }
-      clearInterval(timerId);
-      recordQuizEndTimeIfNeeded();
-      finishQuiz('early_leave');
+      openLeaveConfirmModal();
     });
     restartBtn.addEventListener('click', () => {
-      clearInterval(timerId);
+      stopTimer();
       hideGameOverModal();
+      closeLeaveConfirmModal({ shouldResumeTimer: false, shouldRestoreFocus: false });
       clearPdfError();
       resetMobilePdfFilenameHint();
       resultPanel.classList.add('hidden');
@@ -2006,7 +2067,19 @@
       }
       finishQuiz('hp_zero');
     });
+    leaveConfirmCancelBtn.addEventListener('click', () => {
+      closeLeaveConfirmModal({ shouldResumeTimer: shouldResumeTimerAfterLeaveCancel });
+    });
+    leaveConfirmConfirmBtn.addEventListener('click', confirmLeaveQuiz);
     soundToggleBtn.addEventListener('click', toggleQuizSoundMode);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !isLeaveConfirmModalOpen()) {
+        return;
+      }
+      event.preventDefault();
+      closeLeaveConfirmModal({ shouldResumeTimer: shouldResumeTimerAfterLeaveCancel });
+    });
 
     answerInput.addEventListener('keydown', (event) => {
       if (isGameOverModalOpen()) {
