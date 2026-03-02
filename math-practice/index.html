@@ -140,6 +140,7 @@
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
             <option value="1">個位數（1~9）</option>
             <option value="2" selected>十位數（1~99）</option>
+            <option value="4">十位數困難版（加法必進位、減法必借位）</option>
             <option value="3">百位數（1~999）</option>
           </select>
         </label>
@@ -413,7 +414,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260302.2';
+    const CURRENT_BUILD_ID = '20260302.4';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const LEARNING_SUGGESTION_RULES = {
       minSamples: 3,
@@ -937,11 +938,22 @@
     function getDigitLengthLabel(digitLength) {
       if (digitLength === 1) return '個位數（1~9）';
       if (digitLength === 2) return '十位數（1~99）';
+      if (digitLength === 4) return '十位數困難版（加法必進位、減法必借位）';
       return '百位數（1~999）';
     }
 
+    function isHardTensMode(digitLength) {
+      return digitLength === 4;
+    }
+
     function getReducedDigitLength(currentDigitLength) {
-      return currentDigitLength > 1 ? currentDigitLength - 1 : 1;
+      if (currentDigitLength === 4 || currentDigitLength === 3) {
+        return 2;
+      }
+      if (currentDigitLength === 2) {
+        return 1;
+      }
+      return 1;
     }
 
     function formatPercent(rate) {
@@ -1188,6 +1200,7 @@
     function getAddSubMaxValue(digitLength) {
       if (digitLength === 1) return 9;
       if (digitLength === 2) return 99;
+      if (digitLength === 4) return 99;
       return 999;
     }
 
@@ -1199,8 +1212,9 @@
     }
 
     function generateQuestion(digitLength, operationTypes, mulDivRanges) {
-      const addSubMin = 1;
+      const addSubMin = isHardTensMode(digitLength) ? 10 : 1;
       const addSubMax = getAddSubMaxValue(digitLength);
+      const hardTensMode = isHardTensMode(digitLength);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
       let mulLeftMin = 2;
@@ -1220,8 +1234,36 @@
       let b = randomInt(addSubMin, addSubMax);
       let correct = 0;
       if (operationType === 'add') {
+        if (hardTensMode) {
+          const aTens = randomInt(1, 9);
+          const aUnits = randomInt(1, 9);
+          const bTens = randomInt(1, 9);
+          const bUnits = randomInt(10 - aUnits, 9);
+          a = aTens * 10 + aUnits;
+          b = bTens * 10 + bUnits;
+        }
         correct = a + b;
       } else if (operationType === 'sub') {
+        if (hardTensMode) {
+          const aTens = randomInt(2, 9);
+          const bTens = randomInt(1, aTens - 1);
+          const aUnits = randomInt(0, 8);
+          const bUnits = randomInt(aUnits + 1, 9);
+          a = aTens * 10 + aUnits;
+          b = bTens * 10 + bUnits;
+          correct = a - b;
+          return {
+            a,
+            b,
+            operationType,
+            operationSymbol: operation.symbol,
+            operationLabel: operation.label,
+            correct,
+            userAnswer: null,
+            timeout: false,
+            elapsedSeconds: 0
+          };
+        }
         let found = false;
         for (let i = 0; i < 500; i += 1) {
           a = randomInt(addSubMin, addSubMax);
@@ -1290,14 +1332,23 @@
       return divSet.size;
     }
 
+    function calculateAddHardMaxUniqueCount() {
+      return 3645;
+    }
+
+    function calculateSubHardMaxUniqueCount() {
+      return 1620;
+    }
+
     function calculateMaxUniqueCount(digitLength, operationTypes, mulDivRanges) {
       const addSubMax = getAddSubMaxValue(digitLength);
+      const hardTensMode = isHardTensMode(digitLength);
       let total = 0;
       if (operationTypes.includes('add')) {
-        total += addSubMax * addSubMax;
+        total += hardTensMode ? calculateAddHardMaxUniqueCount() : addSubMax * addSubMax;
       }
       if (operationTypes.includes('sub')) {
-        total += (addSubMax * (addSubMax - 1)) / 2;
+        total += hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubMax * (addSubMax - 1)) / 2;
       }
       if (operationTypes.includes('mul')) {
         total += calculateMulMaxUniqueCount(mulDivRanges);
@@ -1365,7 +1416,7 @@
         setInvalid(questionCountInput, true);
         return '題目數量請輸入 1 到 200 的整數。';
       }
-      if (![1, 2, 3].includes(digitLength)) {
+      if (![1, 2, 3, 4].includes(digitLength)) {
         setInvalid(digitLengthSelect, true);
         return '加、減法出題數字設定不正確。';
       }
@@ -1646,7 +1697,7 @@
       let wrongCount = 0;
       resultBody.innerHTML = '';
       const selectedOperations = config.operationTypes.map((type) => getOperationMeta(type).label).join('、');
-      const addSubRangeLabel = config.digitLength === 1 ? '1~9' : config.digitLength === 2 ? '1~99' : '1~999';
+      const addSubRangeLabel = getDigitLengthLabel(config.digitLength);
       const usesMulDiv = config.operationTypes.includes('mul') || config.operationTypes.includes('div');
       const mulDivRangeLabel = usesMulDiv
         ? config.mulDivRanges
