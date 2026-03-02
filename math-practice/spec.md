@@ -13,6 +13,8 @@
 - 樣式建置命令：
   - `npm run build:css`：一次性編譯
   - `npm run watch:css`：開發期間即時編譯
+- 本機靜態伺服器命令：
+  - `npm run serve`（`python -m http.server 40000`）
 
 ## SEO 規格
 

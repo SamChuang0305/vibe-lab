@@ -13,8 +13,9 @@
 ## 快速開始
 - 直接以瀏覽器開啟 `index.html`。
 - 建議使用本機靜態伺服器：
-  - `python3 -m http.server 8000`
-  - 開啟 `http://localhost:8000`
+  - `npm run serve`
+  - 開啟 `http://localhost:40000`
+  - 或使用：`python3 -m http.server 8000` 後開啟 `http://localhost:8000`
 
 ## 樣式建置（Tailwind CLI）
 - 安裝相依套件：

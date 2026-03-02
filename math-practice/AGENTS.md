@@ -20,8 +20,9 @@
   - `npm run build:css`
   - `npm run watch:css`（開發時即時編譯）
 - 建議本機啟動靜態伺服器避免瀏覽器限制：
-  - `python3 -m http.server 8000`
-  - 開啟 `http://localhost:8000`
+  - `npm run serve`
+  - 開啟 `http://localhost:40000`
+  - 或使用 `python3 -m http.server 8000` 後開啟 `http://localhost:8000`
 - 快速檢查變更：
   - `git diff -- index.html user-guide.html README.md spec.md AGENTS.md`
   - `rg "關鍵字" index.html user-guide.html README.md spec.md AGENTS.md`

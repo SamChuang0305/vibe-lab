@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "serve": "python -m http.server 40000",
     "build:css": "tailwindcss -i ./styles/input.css -o ./styles/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./styles/input.css -o ./styles/tailwind.css --watch"
   },
