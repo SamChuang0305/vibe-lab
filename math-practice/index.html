@@ -220,7 +220,7 @@
       <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
         <h3 class="text-base font-semibold text-slate-800">說明</h3>
         <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
-          <li>隨機產生數學計算題目。</li>
+          <li>勾選多種題目種類時，會平均分配各題型出題數量，剩餘題數依加法、減法、乘法、除法順序補齊。</li>
           <li>題型固定為 a、b 兩個數字做四則計算。</li>
           <li>a、b 兩個數字都不會小於 0。</li>
           <li>若題目為乘法或除法，a、b 兩個數字都不會出現 1。</li>
@@ -414,8 +414,9 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260303.2';
+    const CURRENT_BUILD_ID = '20260303.3';
     const SOUND_GAIN_MULTIPLIER = 1.6;
+    const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
       minSamples: 3,
       maxSuggestions: 3,
@@ -1211,12 +1212,11 @@
       return { leftMin: 2, leftMax: 9, rightMin: 2, rightMax: 9 };
     }
 
-    function generateQuestion(digitLength, operationTypes, mulDivRanges) {
+    function generateQuestion(digitLength, operationType, mulDivRanges) {
       const addSubRange = getAddSubRange(digitLength);
       const addSubMin = addSubRange.min;
       const addSubMax = addSubRange.max;
       const hardTensMode = isHardTensMode(digitLength);
-      const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
       let mulLeftMin = 2;
       let mulLeftMax = 9;
@@ -1341,42 +1341,114 @@
       return 1620;
     }
 
-    function calculateMaxUniqueCount(digitLength, operationTypes, mulDivRanges) {
+    function calculateMaxUniqueCountByType(digitLength, operationTypes, mulDivRanges) {
       const addSubRange = getAddSubRange(digitLength);
       const addSubCount = addSubRange.max - addSubRange.min + 1;
       const hardTensMode = isHardTensMode(digitLength);
-      let total = 0;
+      const maxByType = {};
       if (operationTypes.includes('add')) {
-        total += hardTensMode ? calculateAddHardMaxUniqueCount() : addSubCount * addSubCount;
+        maxByType.add = hardTensMode ? calculateAddHardMaxUniqueCount() : addSubCount * addSubCount;
       }
       if (operationTypes.includes('sub')) {
-        total += hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubCount * (addSubCount - 1)) / 2;
+        maxByType.sub = hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubCount * (addSubCount - 1)) / 2;
       }
       if (operationTypes.includes('mul')) {
-        total += calculateMulMaxUniqueCount(mulDivRanges);
+        maxByType.mul = calculateMulMaxUniqueCount(mulDivRanges);
       }
       if (operationTypes.includes('div')) {
-        total += calculateDivMaxUniqueCount(mulDivRanges);
+        maxByType.div = calculateDivMaxUniqueCount(mulDivRanges);
       }
-      return total;
+      return maxByType;
+    }
+
+    function calculateMaxUniqueCount(digitLength, operationTypes, mulDivRanges) {
+      const maxByType = calculateMaxUniqueCountByType(digitLength, operationTypes, mulDivRanges);
+      return operationTypes.reduce((total, type) => total + (maxByType[type] || 0), 0);
+    }
+
+    function allocateQuestionQuota(questionCount, operationTypes, maxByType) {
+      const quotas = {};
+      operationTypes.forEach((type) => {
+        quotas[type] = 0;
+      });
+      if (operationTypes.length === 0 || questionCount <= 0) {
+        return { quotas, remaining: 0 };
+      }
+
+      const baseQuota = Math.floor(questionCount / operationTypes.length);
+      let remaining = questionCount;
+      operationTypes.forEach((type) => {
+        const maxCount = maxByType[type] || 0;
+        const assigned = Math.min(baseQuota, maxCount);
+        quotas[type] = assigned;
+        remaining -= assigned;
+      });
+
+      const orderedTypes = OPERATION_ALLOCATION_ORDER.filter((type) => operationTypes.includes(type));
+      while (remaining > 0) {
+        let allocatedInRound = false;
+        orderedTypes.forEach((type) => {
+          if (remaining <= 0) {
+            return;
+          }
+          const maxCount = maxByType[type] || 0;
+          if (quotas[type] >= maxCount) {
+            return;
+          }
+          quotas[type] += 1;
+          remaining -= 1;
+          allocatedInRound = true;
+        });
+        if (!allocatedInRound) {
+          break;
+        }
+      }
+
+      return { quotas, remaining };
+    }
+
+    function shuffleArray(items) {
+      for (let i = items.length - 1; i > 0; i -= 1) {
+        const j = randomInt(0, i);
+        [items[i], items[j]] = [items[j], items[i]];
+      }
     }
 
     function buildUniqueQuestions(questionCount, digitLength, operationTypes, mulDivRanges) {
       const uniqueQuestions = [];
       const seen = new Set();
-      const maxAttempts = Math.max(questionCount * 50, 1000);
-      let attempts = 0;
+      const maxByType = calculateMaxUniqueCountByType(digitLength, operationTypes, mulDivRanges);
+      const quotaResult = allocateQuestionQuota(questionCount, operationTypes, maxByType);
+      if (quotaResult.remaining > 0) {
+        return uniqueQuestions;
+      }
+      const orderedTypes = OPERATION_ALLOCATION_ORDER.filter((type) => operationTypes.includes(type));
 
-      while (uniqueQuestions.length < questionCount && attempts < maxAttempts) {
-        attempts += 1;
-        const question = generateQuestion(digitLength, operationTypes, mulDivRanges);
-        const key = getQuestionKey(question);
-        if (seen.has(key)) {
+      for (const type of orderedTypes) {
+        const targetCount = quotaResult.quotas[type] || 0;
+        if (targetCount <= 0) {
           continue;
         }
-        seen.add(key);
-        uniqueQuestions.push(question);
+        const maxAttempts = Math.max(targetCount * 100, 1000);
+        let attempts = 0;
+        let typeCount = 0;
+        while (typeCount < targetCount && attempts < maxAttempts) {
+          attempts += 1;
+          const question = generateQuestion(digitLength, type, mulDivRanges);
+          const key = getQuestionKey(question);
+          if (seen.has(key)) {
+            continue;
+          }
+          seen.add(key);
+          uniqueQuestions.push(question);
+          typeCount += 1;
+        }
+        if (typeCount < targetCount) {
+          return uniqueQuestions;
+        }
       }
+
+      shuffleArray(uniqueQuestions);
 
       return uniqueQuestions;
     }
