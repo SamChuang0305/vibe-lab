@@ -2,6 +2,7 @@
 
 ## Project Structure & Module Organization
 - `index.html`: 單一入口與主要應用程式邏輯（UI、出題、作答、結果、PDF 列印）。
+- `version.json`: 版本資訊檔，保存 `buildId`，需與 `index.html` 的 `CURRENT_BUILD_ID` 保持一致。
 - `README.md`: 使用說明與快速上手指南。
 - `spec.md`: 產品規格文件，功能或規則調整時需同步更新。
 - `user-guide.html`: 終端使用者操作說明頁（給非技術使用者閱讀）。
