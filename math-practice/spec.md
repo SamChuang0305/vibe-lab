@@ -63,6 +63,7 @@
   - 初次載入且停留設定頁。
   - 由結果頁按 `重新開始` 回到設定頁。
 - 偵測 `version.json.buildId !== CURRENT_BUILD_ID` 時，設定頁顯示新版本提示與 `立即更新` 按鈕。
+- 設定頁區塊顯示順序為：`setupError` → `updateNotice` → 主要按鈕列（開始練習/重置預設值/操作說明）。
 - 使用者點擊 `立即更新` 後執行 `window.location.reload()` 取得新版。
 - 作答中與結果頁不得主動跳出更新提示或強制刷新。
 - 讀取 `version.json` 可加上 `?ts=${Date.now()}` 搭配 `cache: 'no-store'` 避免快取；`Date.now()` 僅作防快取，不參與版本判斷。
