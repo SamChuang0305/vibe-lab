@@ -136,12 +136,12 @@
         </fieldset>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">加、減法出題數字（預設：十位數 1~99）</span>
+          <span class="text-sm font-medium">加、減法出題數字（預設：十位數 10~99）</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
             <option value="1">個位數（1~9）</option>
-            <option value="2" selected>十位數（1~99）</option>
+            <option value="2" selected>十位數（10~99）</option>
             <option value="4">十位數困難版（加法必進位、減法必借位）</option>
-            <option value="3">百位數（1~999）</option>
+            <option value="3">百位數（100~999）</option>
           </select>
         </label>
 
@@ -414,7 +414,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260303.1';
+    const CURRENT_BUILD_ID = '20260303.2';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const LEARNING_SUGGESTION_RULES = {
       minSamples: 3,
@@ -937,9 +937,9 @@
 
     function getDigitLengthLabel(digitLength) {
       if (digitLength === 1) return '個位數（1~9）';
-      if (digitLength === 2) return '十位數（1~99）';
+      if (digitLength === 2) return '十位數（10~99）';
       if (digitLength === 4) return '十位數困難版（加法必進位、減法必借位）';
-      return '百位數（1~999）';
+      return '百位數（100~999）';
     }
 
     function isHardTensMode(digitLength) {
@@ -1197,11 +1197,11 @@
       });
     }
 
-    function getAddSubMaxValue(digitLength) {
-      if (digitLength === 1) return 9;
-      if (digitLength === 2) return 99;
-      if (digitLength === 4) return 99;
-      return 999;
+    function getAddSubRange(digitLength) {
+      if (digitLength === 1) return { min: 1, max: 9 };
+      if (digitLength === 2) return { min: 10, max: 99 };
+      if (digitLength === 4) return { min: 10, max: 99 };
+      return { min: 100, max: 999 };
     }
 
     function getMulDivRange(rangeType) {
@@ -1212,8 +1212,9 @@
     }
 
     function generateQuestion(digitLength, operationTypes, mulDivRanges) {
-      const addSubMin = isHardTensMode(digitLength) ? 10 : 1;
-      const addSubMax = getAddSubMaxValue(digitLength);
+      const addSubRange = getAddSubRange(digitLength);
+      const addSubMin = addSubRange.min;
+      const addSubMax = addSubRange.max;
       const hardTensMode = isHardTensMode(digitLength);
       const operationType = operationTypes[randomInt(0, operationTypes.length - 1)];
       const operation = getOperationMeta(operationType);
@@ -1341,14 +1342,15 @@
     }
 
     function calculateMaxUniqueCount(digitLength, operationTypes, mulDivRanges) {
-      const addSubMax = getAddSubMaxValue(digitLength);
+      const addSubRange = getAddSubRange(digitLength);
+      const addSubCount = addSubRange.max - addSubRange.min + 1;
       const hardTensMode = isHardTensMode(digitLength);
       let total = 0;
       if (operationTypes.includes('add')) {
-        total += hardTensMode ? calculateAddHardMaxUniqueCount() : addSubMax * addSubMax;
+        total += hardTensMode ? calculateAddHardMaxUniqueCount() : addSubCount * addSubCount;
       }
       if (operationTypes.includes('sub')) {
-        total += hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubMax * (addSubMax - 1)) / 2;
+        total += hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubCount * (addSubCount - 1)) / 2;
       }
       if (operationTypes.includes('mul')) {
         total += calculateMulMaxUniqueCount(mulDivRanges);
