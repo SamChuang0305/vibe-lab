@@ -8,7 +8,8 @@
 
 ## 前端樣式載入規格
 
-- `index.html`、`user-guide.html` 僅可載入本地 `styles/tailwind.css`，不得使用 `https://cdn.tailwindcss.com` runtime script。
+- `index.html`、`user-guide.html` 僅可載入本地 `styles/tailwind.css?v=<buildId>`，不得使用 `https://cdn.tailwindcss.com` runtime script。
+- `tailwind.css` 的 `?v=` 必須與目前 `buildId` 相同，確保部署後重新整理可抓到新版 CSS。
 - Tailwind 來源檔為 `styles/input.css`，由 `tailwind.config.js` 掃描 `index.html` 後產生輸出。
 - 樣式建置命令：
   - `npm run build:css`：一次性編譯
@@ -59,6 +60,7 @@
   }
   ```
 - `index.html` 需維護 `CURRENT_BUILD_ID` 常數，且值必須與 `version.json` 的 `buildId` 一致。
+- `index.html`、`user-guide.html` 載入 `styles/tailwind.css?v=<buildId>` 時，`?v=` 必須與 `CURRENT_BUILD_ID` / `version.json.buildId` 一致。
 - 前端僅在設定頁（首頁）顯示時檢查新版：
   - 初次載入且停留設定頁。
   - 由結果頁按 `重新開始` 回到設定頁。

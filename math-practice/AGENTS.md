@@ -27,8 +27,8 @@
 - 快速檢查變更：
   - `git diff -- index.html user-guide.html README.md spec.md AGENTS.md`
   - `rg "關鍵字" index.html user-guide.html README.md spec.md AGENTS.md`
-  - `rg "CURRENT_BUILD_ID|buildId" index.html version.json`
-  - `git diff -- index.html version.json`
+  - `rg "CURRENT_BUILD_ID|buildId|tailwind.css\\?v=" index.html user-guide.html version.json`
+  - `git diff -- index.html user-guide.html version.json`
 
 ## Coding Style & Naming Conventions
 - 使用 2 spaces 縮排（與既有 `index.html` 一致）。
@@ -83,12 +83,13 @@
 - 版本升版規則（buildId）：
   - 只要該次 commit 有任何「程式行為、畫面互動、商業規則、文案顯示邏輯」變更，必須同步升版 `buildId`。
   - 升版時必須同時更新 `version.json` 的 `buildId` 與 `index.html` 的 `CURRENT_BUILD_ID`，且兩者值必須完全一致。
+  - 升版時必須同步更新 `index.html`、`user-guide.html` 的 `styles/tailwind.css?v=<buildId>`，且 `?v=` 必須與 `buildId` 完全一致。
   - `buildId` 格式維持 `YYYYMMDD.N`；同日多次修改需遞增 `N`。
   - `buildId` 的日期（`YYYYMMDD`）一律以台灣時間（`UTC+08:00`）當下日期為準。
   - 若開發環境顯示為其他時區，需先換算為台灣時間後再決定 `YYYYMMDD`，不可直接沿用本機時區日期。
   - 跨日邊界時（例如本機仍為前一天、台灣已進入隔日），必須使用台灣日期；例如台灣時間為 `2026-03-03` 時，`buildId` 日期必須是 `20260303`。
   - 若僅文件調整（例如純 `README.md`、`spec.md`、`user-guide.html` 文字修正）且無任何程式行為變更，可不升版。
-  - 每次提交前必做人工檢查：`rg "CURRENT_BUILD_ID|buildId" index.html version.json` 與 `git diff -- index.html version.json`。
+  - 每次提交前必做人工檢查：`rg "CURRENT_BUILD_ID|buildId|tailwind.css\\?v=" index.html user-guide.html version.json` 與 `git diff -- index.html user-guide.html version.json`。
   - 送出最終回覆時，需明確列出「本次 buildId 舊值 -> 新值」；若未升版，需說明未升版原因。
 - PR 需包含：
   - 變更摘要與動機

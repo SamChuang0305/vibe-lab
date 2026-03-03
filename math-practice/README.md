@@ -24,7 +24,8 @@
   - `npm run build:css`
 - 開發時即時編譯：
   - `npm run watch:css`
-- 產線頁面載入 `styles/tailwind.css`，不使用 `cdn.tailwindcss.com`。
+- 產線頁面載入 `styles/tailwind.css?v=<buildId>`，不使用 `cdn.tailwindcss.com`。
+- `index.html`、`user-guide.html` 的 `?v=` 必須與目前 `buildId` 一致，避免部署後沿用舊 CSS 快取。
 
 ## SEO 與收錄
 - 子專案正式網址（canonical）：`https://sam.webspace.tw/vibe-lab/math-practice/`
@@ -80,7 +81,8 @@
 ### 發布時必做
 1. 更新根目錄 `version.json` 的 `buildId`。
 2. 同步更新 `index.html` 內的 `CURRENT_BUILD_ID`。
-3. 確認兩者完全一致後再部署。
+3. 同步更新 `index.html`、`user-guide.html` 的 `styles/tailwind.css?v=<buildId>`。
+4. 確認三者（`version.json`、`CURRENT_BUILD_ID`、`tailwind.css?v=`）完全一致後再部署。
 
 ## 操作說明頁（給終端使用者）
 - 檔案：`user-guide.html`
