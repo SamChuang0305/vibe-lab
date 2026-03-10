@@ -71,7 +71,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.1" />
+  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.2" />
   <style>
     @media print {
       body {
@@ -429,7 +429,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260310.1';
+    const CURRENT_BUILD_ID = '20260310.2';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
@@ -1009,19 +1009,30 @@
       const opLabel = getOperationMeta(type).label;
       if (type === 'add' || type === 'sub') {
         const reducedDigitLength = getReducedDigitLength(config.digitLength);
-        return `建議關卡設定：只勾選 ${opLabel}，題目數 10~15 題，加減上限改為 ${getDigitLengthLabel(reducedDigitLength)}，單題答題時間改為無時間限制。`;
+        return `建議關卡設定：只勾選 ${opLabel}，題目數 ${getLearningSuggestionQuestionCount(type, 'wrong_high')} 題，加減上限改為 ${getDigitLengthLabel(reducedDigitLength)}，單題答題時間改為無時間限制。`;
       }
       return `建議關卡設定：只勾選 ${opLabel}，乘除範圍先選 9x9（2x2 ~ 9x9），題目數 10~15 題，單題答題時間改為無時間限制。`;
     }
 
     function buildSpeedFocusedSetupText(type) {
       const opLabel = getOperationMeta(type).label;
-      return `建議關卡設定：只勾選 ${opLabel}，題目數 10~15 題，單題答題時間改為限定秒數（8~12 秒）進行提速練習。`;
+      return `建議關卡設定：只勾選 ${opLabel}，題目數 ${getLearningSuggestionQuestionCount(type, 'speed')} 題，單題答題時間改為限定秒數（8~12 秒）進行提速練習。`;
     }
 
     function buildBalancedSetupText(type) {
       const opLabel = getOperationMeta(type).label;
-      return `建議關卡設定：只勾選 ${opLabel}，題目數 15~20 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
+      return `建議關卡設定：只勾選 ${opLabel}，題目數 ${getLearningSuggestionQuestionCount(type, 'balanced')} 題，單題答題時間可先放寬為 15 秒，穩定後再逐步縮短。`;
+    }
+
+    function getLearningSuggestionQuestionCount(type, strategy) {
+      const isAddSub = type === 'add' || type === 'sub';
+      if (isAddSub && isBasicTenMode(config.digitLength)) {
+        return 9;
+      }
+      if (strategy === 'balanced') {
+        return 18;
+      }
+      return 12;
     }
 
     function buildLearningSuggestionPreset(type, strategy) {
@@ -1029,10 +1040,11 @@
       const isAddSub = type === 'add' || type === 'sub';
       const isMulDiv = type === 'mul' || type === 'div';
       const currentMulDivRanges = config.mulDivRanges.length > 0 ? [...config.mulDivRanges] : ['9'];
+      const suggestionQuestionCount = getLearningSuggestionQuestionCount(type, strategy);
       if (strategy === 'wrong_high') {
         return {
           operationType: type,
-          questionCount: 12,
+          questionCount: suggestionQuestionCount,
           digitLength: isAddSub ? reducedDigitLength : config.digitLength,
           mulDivRanges: isMulDiv ? ['9'] : ['9'],
           timeMode: 'unlimited',
@@ -1042,7 +1054,7 @@
       if (strategy === 'balanced') {
         return {
           operationType: type,
-          questionCount: 18,
+          questionCount: suggestionQuestionCount,
           digitLength: config.digitLength,
           mulDivRanges: isMulDiv ? currentMulDivRanges : ['9'],
           timeMode: 'limited',
@@ -1051,7 +1063,7 @@
       }
       return {
         operationType: type,
-        questionCount: 12,
+        questionCount: suggestionQuestionCount,
         digitLength: config.digitLength,
         mulDivRanges: isMulDiv ? currentMulDivRanges : ['9'],
         timeMode: 'limited',
