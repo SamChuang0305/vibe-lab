@@ -71,7 +71,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.4" />
+  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.5" />
   <style>
     @media print {
       body {
@@ -142,7 +142,7 @@
             <option value="6">基礎練習（合十加法、拆十減法）</option>
             <option value="1">個位數（1~9）</option>
             <option value="2" selected>十位數（10~99）</option>
-            <option value="4">十位數困難版（加法必進位、減法必借位）</option>
+            <option value="4">十位數進階（加法必進位、減法必借位）</option>
             <option value="3">百位數（100~999）</option>
           </select>
         </label>
@@ -431,7 +431,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260310.4';
+    const CURRENT_BUILD_ID = '20260310.5';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
@@ -966,7 +966,7 @@
       if (digitLength === 6) return '基礎練習（合十加法、拆十減法）';
       if (digitLength === 1) return '個位數（1~9）';
       if (digitLength === 2) return '十位數（10~99）';
-      if (digitLength === 4) return '十位數困難版（加法必進位、減法必借位）';
+      if (digitLength === 4) return '十位數進階（加法必進位、減法必借位）';
       return '百位數（100~999）';
     }
 
