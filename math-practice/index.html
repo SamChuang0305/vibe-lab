@@ -71,7 +71,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="./styles/tailwind.css?v=20260303.7" />
+  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.1" />
   <style>
     @media print {
       body {
@@ -138,6 +138,7 @@
         <label class="flex flex-col gap-1">
           <span class="text-sm font-medium">加、減法出題數字（預設：十位數 10~99）</span>
           <select id="digitLength" class="rounded border border-slate-300 px-3 py-2">
+            <option value="5">基礎練習（10 的合成與分解）</option>
             <option value="1">個位數（1~9）</option>
             <option value="2" selected>十位數（10~99）</option>
             <option value="4">十位數困難版（加法必進位、減法必借位）</option>
@@ -225,6 +226,7 @@
           <li>a、b 兩個數字都不會小於 0。</li>
           <li>若題目為乘法或除法，a、b 兩個數字都不會出現 1。</li>
           <li>若題目為減法或除法，a、b 兩個數字不會相同。</li>
+          <li>基礎練習會固定練習 10 的合成與分解：加法為 x + ? = 10，減法為 10 - x = ?。</li>
           <li>題目計算結果不會小於 0、只會有整數。</li>
           <li>不會出現重複題目。</li>
           <li>設定血條後，當答錯或超時會扣血，若血量歸零則直接結束。</li>
@@ -427,7 +429,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260303.7';
+    const CURRENT_BUILD_ID = '20260310.1';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
@@ -958,10 +960,15 @@
     }
 
     function getDigitLengthLabel(digitLength) {
+      if (digitLength === 5) return '基礎練習（10 的合成與分解）';
       if (digitLength === 1) return '個位數（1~9）';
       if (digitLength === 2) return '十位數（10~99）';
       if (digitLength === 4) return '十位數困難版（加法必進位、減法必借位）';
       return '百位數（100~999）';
+    }
+
+    function isBasicTenMode(digitLength) {
+      return digitLength === 5;
     }
 
     function isHardTensMode(digitLength) {
@@ -969,6 +976,9 @@
     }
 
     function getReducedDigitLength(currentDigitLength) {
+      if (currentDigitLength === 5) {
+        return 5;
+      }
       if (currentDigitLength === 4 || currentDigitLength === 3) {
         return 2;
       }
@@ -1220,10 +1230,18 @@
     }
 
     function getAddSubRange(digitLength) {
+      if (digitLength === 5) return { min: 1, max: 9 };
       if (digitLength === 1) return { min: 1, max: 9 };
       if (digitLength === 2) return { min: 10, max: 99 };
       if (digitLength === 4) return { min: 10, max: 99 };
       return { min: 100, max: 999 };
+    }
+
+    function getQuestionText(question) {
+      if (typeof question.displayText === 'string' && question.displayText) {
+        return question.displayText;
+      }
+      return `${question.a} ${question.operationSymbol} ${question.b} = ?`;
     }
 
     function getMulDivRange(rangeType) {
@@ -1237,6 +1255,7 @@
       const addSubRange = getAddSubRange(digitLength);
       const addSubMin = addSubRange.min;
       const addSubMax = addSubRange.max;
+      const basicTenMode = isBasicTenMode(digitLength);
       const hardTensMode = isHardTensMode(digitLength);
       const operation = getOperationMeta(operationType);
       let mulLeftMin = 2;
@@ -1256,6 +1275,24 @@
       let b = randomInt(addSubMin, addSubMax);
       let correct = 0;
       if (operationType === 'add') {
+        if (basicTenMode) {
+          a = randomInt(1, 9);
+          b = 10;
+          correct = 10 - a;
+          return {
+            a,
+            b,
+            operationType,
+            operationSymbol: operation.symbol,
+            operationLabel: operation.label,
+            correct,
+            displayText: `${a} ${operation.symbol} ? = 10`,
+            questionKey: `${operationType}:${a}:10-complement`,
+            userAnswer: null,
+            timeout: false,
+            elapsedSeconds: 0
+          };
+        }
         if (hardTensMode) {
           const aTens = randomInt(1, 9);
           const aUnits = randomInt(1, 9);
@@ -1266,6 +1303,24 @@
         }
         correct = a + b;
       } else if (operationType === 'sub') {
+        if (basicTenMode) {
+          a = 10;
+          b = randomInt(1, 9);
+          correct = 10 - b;
+          return {
+            a,
+            b,
+            operationType,
+            operationSymbol: operation.symbol,
+            operationLabel: operation.label,
+            correct,
+            displayText: `10 ${operation.symbol} ${b} = ?`,
+            questionKey: `${operationType}:10:${b}`,
+            userAnswer: null,
+            timeout: false,
+            elapsedSeconds: 0
+          };
+        }
         if (hardTensMode) {
           const aTens = randomInt(2, 9);
           const bTens = randomInt(1, aTens - 1);
@@ -1328,6 +1383,9 @@
     }
 
     function getQuestionKey(question) {
+      if (typeof question.questionKey === 'string' && question.questionKey) {
+        return question.questionKey;
+      }
       return `${question.operationType}:${question.a}:${question.b}`;
     }
 
@@ -1365,13 +1423,14 @@
     function calculateMaxUniqueCountByType(digitLength, operationTypes, mulDivRanges) {
       const addSubRange = getAddSubRange(digitLength);
       const addSubCount = addSubRange.max - addSubRange.min + 1;
+      const basicTenMode = isBasicTenMode(digitLength);
       const hardTensMode = isHardTensMode(digitLength);
       const maxByType = {};
       if (operationTypes.includes('add')) {
-        maxByType.add = hardTensMode ? calculateAddHardMaxUniqueCount() : addSubCount * addSubCount;
+        maxByType.add = basicTenMode ? 9 : (hardTensMode ? calculateAddHardMaxUniqueCount() : addSubCount * addSubCount);
       }
       if (operationTypes.includes('sub')) {
-        maxByType.sub = hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubCount * (addSubCount - 1)) / 2;
+        maxByType.sub = basicTenMode ? 9 : (hardTensMode ? calculateSubHardMaxUniqueCount() : (addSubCount * (addSubCount - 1)) / 2);
       }
       if (operationTypes.includes('mul')) {
         maxByType.mul = calculateMulMaxUniqueCount(mulDivRanges);
@@ -1511,7 +1570,7 @@
         setInvalid(questionCountInput, true);
         return '題目數量請輸入 1 到 200 的整數。';
       }
-      if (![1, 2, 3, 4].includes(digitLength)) {
+      if (![1, 2, 3, 4, 5].includes(digitLength)) {
         setInvalid(digitLengthSelect, true);
         return '加、減法出題數字設定不正確。';
       }
@@ -1618,7 +1677,7 @@
 
       const q = questions[currentIndex];
       progressText.textContent = `第 ${currentIndex + 1} / ${questions.length} 題`;
-      questionText.textContent = `${q.a} ${q.operationSymbol} ${q.b} = ?`;
+      questionText.textContent = getQuestionText(q);
       answerInput.value = '';
       currentQuestionStartedAt = Date.now();
       clearQuizError();
@@ -1906,7 +1965,7 @@
 
         const problemTd = document.createElement('td');
         problemTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
-        problemTd.textContent = `${q.a} ${q.operationSymbol} ${q.b}`;
+        problemTd.textContent = getQuestionText(q);
 
         const operationTd = document.createElement('td');
         operationTd.className = 'border border-slate-300 px-3 py-2 text-slate-900';
