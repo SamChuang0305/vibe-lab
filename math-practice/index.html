@@ -71,7 +71,7 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.6" />
+  <link rel="stylesheet" href="./styles/tailwind.css?v=20260310.7" />
   <style>
     @media print {
       body {
@@ -208,7 +208,10 @@
         </label>
       </div>
 
-      <p id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"></p>
+      <div id="setupError" class="mt-3 hidden rounded-md border border-red-200 bg-red-50 px-3 py-3 text-sm font-medium text-red-700">
+        <p id="setupErrorText"></p>
+        <button id="applySuggestedQuestionCountBtn" type="button" class="mt-2 hidden w-full rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 sm:w-auto">套用建議的題目數量</button>
+      </div>
       <div id="updateNotice" class="mt-3 hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
         <p id="updateNoticeText" class="font-medium">偵測到新版本，請更新後再開始練習。</p>
         <button id="updateReloadBtn" type="button" class="mt-2 rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300">立即更新</button>
@@ -378,6 +381,8 @@
     const mulDivRange20Input = document.getElementById('mulDivRange20');
     const secondsWrap = document.getElementById('secondsWrap');
     const setupError = document.getElementById('setupError');
+    const setupErrorText = document.getElementById('setupErrorText');
+    const applySuggestedQuestionCountBtn = document.getElementById('applySuggestedQuestionCountBtn');
     const setupVersionText = document.getElementById('setupVersionText');
     const updateNotice = document.getElementById('updateNotice');
     const updateNoticeText = document.getElementById('updateNoticeText');
@@ -441,7 +446,7 @@
     let audioContext = null;
     let audioUnlocked = false;
     let pendingUpdateBuildId = null;
-    const CURRENT_BUILD_ID = '20260310.6';
+    const CURRENT_BUILD_ID = '20260310.7';
     const SOUND_GAIN_MULTIPLIER = 1.6;
     const OPERATION_ALLOCATION_ORDER = ['add', 'sub', 'mul', 'div'];
     const LEARNING_SUGGESTION_RULES = {
@@ -567,13 +572,22 @@
       borderTarget.classList.toggle('ring-red-200', isInvalid);
     }
 
-    function showSetupError(message) {
-      setupError.textContent = message;
+    let suggestedSetupQuestionCount = null;
+
+    function showSetupError(message, options = {}) {
+      const suggestedQuestionCount = Number.isInteger(options.suggestedQuestionCount)
+        ? options.suggestedQuestionCount
+        : null;
+      suggestedSetupQuestionCount = suggestedQuestionCount;
+      setupErrorText.textContent = message;
+      applySuggestedQuestionCountBtn.classList.toggle('hidden', suggestedQuestionCount === null);
       setupError.classList.remove('hidden');
     }
 
     function clearSetupError() {
-      setupError.textContent = '';
+      suggestedSetupQuestionCount = null;
+      setupErrorText.textContent = '';
+      applySuggestedQuestionCountBtn.classList.add('hidden');
       setupError.classList.add('hidden');
     }
 
@@ -1699,7 +1713,10 @@
         config.mulDivRanges
       );
       if (config.questionCount > maxUniqueCount) {
-        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`);
+        showSetupError(
+          `在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`,
+          { suggestedQuestionCount: maxUniqueCount }
+        );
         return;
       }
 
@@ -1710,7 +1727,10 @@
         config.mulDivRanges
       );
       if (questions.length < config.questionCount) {
-        showSetupError(`在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`);
+        showSetupError(
+          `在目前設定下無法產生足夠的不重複題目，請調整題目數量（目前最多可出 ${maxUniqueCount} 題）、加、減法出題數字、乘除法出題範圍或題目種類。`,
+          { suggestedQuestionCount: maxUniqueCount }
+        );
         return;
       }
       currentIndex = 0;
@@ -2251,6 +2271,14 @@
       secondsWrap.classList.toggle('hidden', !isLimited);
     });
     questionCountInput.addEventListener('input', () => {
+      clearSetupError();
+      setInvalid(questionCountInput, false);
+    });
+    applySuggestedQuestionCountBtn.addEventListener('click', () => {
+      if (!Number.isInteger(suggestedSetupQuestionCount)) {
+        return;
+      }
+      questionCountInput.value = String(suggestedSetupQuestionCount);
       clearSetupError();
       setInvalid(questionCountInput, false);
     });
